@@ -36,4 +36,13 @@ class Invoker:
 
     def execute_commands(self):
         pass
+        
+class CommandHistory()
+    history = Command[]
+    
+    def push(cmd Command):
+        history.append(cmd)
+
+    def pop():
+        pass
     
