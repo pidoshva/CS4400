@@ -37,8 +37,13 @@ class Invoker:
     def execute_commands(self):
         pass
         
-class CommandHistory()
-    history = Command[]
+class CommandHistory:
+    """CommandHistory class"""
+    #list of commands
+    history = []
+    
+    def __init__(self):
+        pass
     
     def push(cmd Command):
         history.append(cmd)
