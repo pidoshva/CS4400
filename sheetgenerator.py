@@ -28,6 +28,28 @@ def generate_medicaid_data(names, num_entries=200):
         medicaid_data.append([medicaid_id, mom_name, birth_date, child_name])
     return pd.DataFrame(medicaid_data, columns=["Medicaid ID", "Mom Name", "Child Birth Date", "Child Name"])
 
+# Function to verify that all names are present in both sheets
+def verify_names(child_data_file, medicaid_data_file):
+    # Load the two Excel files
+    child_df = pd.read_excel(child_data_file)
+    medicaid_df = pd.read_excel(medicaid_data_file)
+    
+    # Extract the names from both DataFrames
+    child_names = set(child_df["Child Name"])
+    medicaid_names = set(medicaid_df["Child Name"])
+    
+    # Check for missing or extra names
+    missing_in_medicaid = child_names - medicaid_names
+    missing_in_children = medicaid_names - child_names
+    
+    if not missing_in_medicaid and not missing_in_children:
+        print("All names match in both sheets! No missing or extra names.")
+    else:
+        if missing_in_medicaid:
+            print("Names in children data but missing in Medicaid data:", missing_in_medicaid)
+        if missing_in_children:
+            print("Names in Medicaid data but missing in children data:", missing_in_children)
+
 # Main function to generate the files
 def generate_excel_files():
     # Generate two DataFrames with 200 entries each
@@ -42,6 +64,9 @@ def generate_excel_files():
     medicaid_data_df.to_excel(medicaid_data_filename, index=False)
     
     print(f"Files created: {child_data_filename}, {medicaid_data_filename}")
+    
+    # Verify that all names are present in both files
+    verify_names(child_data_filename, medicaid_data_filename)
 
 # Run the program
 if __name__ == "__main__":
