@@ -23,13 +23,15 @@ def generate_shared_data(num_entries=200):
         mom_last_name = fake.last_name()
         mom_first_name = fake.first_name()
         child_dob = generate_child_dob().strftime("%Y-%m-%d")
+        mother_id = fake.unique.random_number(digits=9)  # Generate unique mother ID
         shared_data.append({
             "child_last_name": child_last_name,
             "child_first_name": child_first_name,
             "child_middle_name": child_middle_name,
             "mom_last_name": mom_last_name,
             "mom_first_name": mom_first_name,
-            "child_dob": child_dob
+            "child_dob": child_dob,
+            "mother_id": mother_id
         })
     return shared_data
 
@@ -47,7 +49,7 @@ def generate_database_data(shared_data):
         "Mother Last Name", "Mother First Name", "State File Number"
     ])
 
-# Function to generate the "Email List" (Medicaid List) data
+# Function to generate the "Medicaid List" data with added Mother ID
 def generate_medicaid_data(shared_data):
     medicaid_data = []
     for entry in shared_data:
@@ -64,12 +66,12 @@ def generate_medicaid_data(shared_data):
         tobacco_usage = fake.boolean(chance_of_getting_true=10)  # 10% chance
         utah_first_time_man = fake.boolean(chance_of_getting_true=20)  # 20% chance
         medicaid_data.append([
-            entry["mom_first_name"], entry["mom_last_name"], mom_dob, child_id, entry["child_dob"], 
+            entry["mom_first_name"], entry["mom_last_name"], mom_dob, entry["mother_id"], child_id, entry["child_dob"], 
             case_id, phone_number, mobile_number, street, city, state, zip_code, 
             county, tobacco_usage, utah_first_time_man
         ])
     return pd.DataFrame(medicaid_data, columns=[
-        "Mother First Name", "Last Name", "Mother DOB", "Child ID", "Child DOB", 
+        "Mother First Name", "Last Name", "Mother DOB", "Mother ID", "Child ID", "Child DOB", 
         "Case ID", "Phone #", "Mobile #", "Street", "City", "State", "ZIP", 
         "County", "Tobacco Usage", "Utah First Time Man."
     ])
