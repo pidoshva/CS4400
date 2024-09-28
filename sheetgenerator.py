@@ -13,33 +13,34 @@ def generate_child_dob():
     birth_date = today - timedelta(days=fake.random_int(min=0, max=max_age.days))
     return birth_date
 
-# Function to generate names and use them for both Database and Medicaid list
-def generate_shared_names(num_entries=200):
-    shared_names = []
+# Function to generate names, birthdates, and use them for both Database and Medicaid list
+def generate_shared_data(num_entries=200):
+    shared_data = []
     for _ in range(num_entries):
         child_last_name = fake.last_name()
         child_first_name = fake.first_name()
         child_middle_name = fake.first_name()
         mom_last_name = fake.last_name()
         mom_first_name = fake.first_name()
-        shared_names.append({
+        child_dob = generate_child_dob().strftime("%Y-%m-%d")
+        shared_data.append({
             "child_last_name": child_last_name,
             "child_first_name": child_first_name,
             "child_middle_name": child_middle_name,
             "mom_last_name": mom_last_name,
-            "mom_first_name": mom_first_name
+            "mom_first_name": mom_first_name,
+            "child_dob": child_dob
         })
-    return shared_names
+    return shared_data
 
 # Function to generate the "Database" data
-def generate_database_data(shared_names):
+def generate_database_data(shared_data):
     database_data = []
-    for name_data in shared_names:
-        dob = generate_child_dob().strftime("%Y-%m-%d")
+    for entry in shared_data:
         state_file_number = fake.unique.random_number(digits=9)
         database_data.append([
-            name_data["child_last_name"], name_data["child_first_name"], name_data["child_middle_name"], dob, 
-            name_data["mom_last_name"], name_data["mom_first_name"], state_file_number
+            entry["child_last_name"], entry["child_first_name"], entry["child_middle_name"], entry["child_dob"], 
+            entry["mom_last_name"], entry["mom_first_name"], state_file_number
         ])
     return pd.DataFrame(database_data, columns=[
         "Child Last Name", "Child First Name", "Child Middle Name", "DOB", 
@@ -47,11 +48,10 @@ def generate_database_data(shared_names):
     ])
 
 # Function to generate the "Email List" (Medicaid List) data
-def generate_medicaid_data(shared_names):
+def generate_medicaid_data(shared_data):
     medicaid_data = []
-    for name_data in shared_names:
+    for entry in shared_data:
         mom_dob = fake.date_of_birth(minimum_age=18, maximum_age=50).strftime("%Y-%m-%d")
-        child_dob = generate_child_dob().strftime("%Y-%m-%d")
         child_id = fake.unique.random_number(digits=5)
         case_id = fake.unique.random_number(digits=9)
         phone_number = fake.phone_number()
@@ -64,7 +64,7 @@ def generate_medicaid_data(shared_names):
         tobacco_usage = fake.boolean(chance_of_getting_true=10)  # 10% chance
         utah_first_time_man = fake.boolean(chance_of_getting_true=20)  # 20% chance
         medicaid_data.append([
-            name_data["mom_first_name"], name_data["mom_last_name"], mom_dob, child_id, child_dob, 
+            entry["mom_first_name"], entry["mom_last_name"], mom_dob, child_id, entry["child_dob"], 
             case_id, phone_number, mobile_number, street, city, state, zip_code, 
             county, tobacco_usage, utah_first_time_man
         ])
@@ -98,12 +98,12 @@ def verify_names(database_file, medicaid_data_file):
 
 # Main function to generate the files
 def generate_excel_files():
-    # Generate shared names
-    shared_names = generate_shared_names(200)
+    # Generate shared names and DOBs
+    shared_data = generate_shared_data(200)
 
-    # Generate data for both sheets using the shared names
-    database_data_df = generate_database_data(shared_names)
-    medicaid_data_df = generate_medicaid_data(shared_names)
+    # Generate data for both sheets using the shared data
+    database_data_df = generate_database_data(shared_data)
+    medicaid_data_df = generate_medicaid_data(shared_data)
 
     # Save the data to Excel files
     database_filename = "database_data_200.xlsx"
