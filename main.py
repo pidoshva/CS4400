@@ -1,5 +1,7 @@
+from invoker import *
+
 def main():
-    pass
+    test = ReadExcelCommand().execute()
 
 if __name__ == "__main__":
     main()
