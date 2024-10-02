@@ -6,16 +6,19 @@ class Command:
         pass
 
 class ReadExcelCommand(Command):
-    """Concrete Commands"""
-    pass
+    def __init__(self, filepath, app):
+        self.filepath = filepath
+        self.app = app
+        self.data = None
 
+    """Concrete Commands"""
     def execute(self):
         pass
 
 class CombineDataCommand(Command):
-    def __init__(self):
-        pass
-
+    def __init__(self, app):
+        self.app = app
+        self.combined_data = None
     def execute(self):
         pass
 
@@ -28,7 +31,7 @@ class SaveDataCommand(Command):
 
 class Invoker:
     """Invoker class"""
-    def __init__(self):
+    def __init__(self,app):
         pass
 
     def add_command(self, command):
@@ -42,11 +45,12 @@ class CommandHistory:
     #list of commands
     history = []
     
-    def __init__(self):
+    def __init__(self,):
         pass
     
-    def push(cmd Command):
-        history.append(cmd)
+    def push(self, cmd: Command):
+        pass
+        # history.append(cmd)
 
     def pop():
         pass
