@@ -1,4 +1,6 @@
 import pandas as pd #for excel manipulationsss
+import tkinter as tk
+from tkinter import filedialog, messagebox
 
 class Command:
     """Command Interface"""
@@ -13,14 +15,23 @@ class ReadExcelCommand(Command):
 
     """Concrete Commands"""
     def execute(self):
-        pass
+        filepath = filedialog.askopenfilename(
+            filetypes=[("Excel files", "*.xlsx *.xls")])
+        if not filepath:
+            pass #throw an error
+
+        command = ReadExcelCommand(filepath, self)
+        self.invoker.add_command(command) #???
+        messagebox.showinfo(
+                "Success", f"File '{filepath}' read successfully.")
+        data_frame = pd.read_excel(filepath)
+        data_frame.columns = [column.replace(" ", "_") for column in data_frame.columns]
+        return data_frame
 
 class CombineDataCommand(Command):
-    def __init__(self, app):
-        self.app = app
-        self.combined_data = None
-    def execute(self):
-        pass
+    def execute(self, data_frames):
+        combined_data_frames = pd.concat(data_frames)
+        combined_data_frames.to_excel('output.xlsx')
 
 class SaveDataCommand(Command):
     def __init__(self):

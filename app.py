@@ -20,11 +20,11 @@ class App:
 
     def create_widgets(self):
         self.read_button1 = tk.Button(
-            self.root, text="Read Excel File 1",command=self.read_excel_file1) 
+            self.root, text="Read Excel File 1",command=self.read_excel_file) 
         self.read_button1.pack(pady=5)
 
         self.read_button2 = tk.Button(
-            self.root, text="Read Excel File 2",command=self.read_excel_file2)
+            self.root, text="Read Excel File 2",command=self.read_excel_file)
         self.read_button2.pack(pady=5)
 
         # combine
@@ -42,29 +42,12 @@ class App:
             self.root, text="Undo",)
         self.undo_button.pack(pady=5)
 
-    def read_excel_file1(self):
-        filepath = filedialog.askopenfilename(
-            filetypes=[("Excel files", "*.xlsx *.xls")])
-        if filepath:
-            command = ReadExcelCommand(filepath, self)
-            self.invoker.add_command(command) #???
-            messagebox.showinfo(
-                "Success", f"File '{filepath}' read successfully.")
-
-    def read_excel_file2(self):
-        filepath = filedialog.askopenfilename(
-            filetypes=[("Excel files", "*.xlsx *.xls")])
-        if filepath:
-            command = ReadExcelCommand(filepath, self)
-            self.invoker.add_command(command) #???
-            messagebox.showinfo(
-                "Success", f"File '{filepath}' read successfully.")
+    def read_excel_file(self):
+        self.data_frames.append(ReadExcelCommand.execute(self))
 
     def combine_data(self):
         if len(self.data_frames) >= 2:
-            command = CombineDataCommand(self)
-            self.invoker.add_command(command)
-            messagebox.showinfo("Success", "Data combined successfully.")
+            CombineDataCommand.execute(self, self.data_frames)
         else:
             messagebox.showwarning(
                 "Warning", "Please read two Excel files first.")
