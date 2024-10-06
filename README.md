@@ -10,9 +10,9 @@ The program then displays the combined data in a graphical user interface (GUI) 
 
 - **Read two Excel files**: The program reads hospital and Medicaid data from two separate Excel files.
 - **Merge the datasets**: The program merges the two datasets based on three key fields:
-  - **Mother's First Name**
-  - **Mother's Last Name**
-  - **Child's Date of Birth**
+Mother's First Name
+Mother's Last Name
+Child's Date of Birth
 - **Display combined data**: The merged data is displayed in a listbox, showing each child's **Mother ID**, **Child Name**, and **DOB**.
 - **Child profile view**: Double-clicking a child in the listbox opens a detailed view of the child’s profile, which includes all combined information.
 - **Output of unmatched data**: Any rows from the original datasets that do not have matching records are logged in the console as "Unmatched" with their Mother IDs.
