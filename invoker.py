@@ -52,13 +52,20 @@ class CombineDataCommand(Command):
             medicaid_data['Mother_First_Name'] = medicaid_data['Mother_First_Name'].apply(normalize_name)
             medicaid_data['Last_Name'] = medicaid_data['Last_Name'].apply(normalize_name)
 
-            # Ensure both datasets have a standardized Date_of_Birth column
+            # Ensure both datasets have a standardized Child Date of Birth column
             database_data.rename(columns={'DOB': 'Child_Date_of_Birth'}, inplace=True)
             medicaid_data.rename(columns={'Child_DOB': 'Child_Date_of_Birth'}, inplace=True)
 
-            # Convert Date_of_Birth to a consistent format
+            # Convert Child_Date_of_Birth to a consistent format
             database_data['Child_Date_of_Birth'] = pd.to_datetime(database_data['Child_Date_of_Birth'], errors='coerce').dt.strftime('%Y-%m-%d')
             medicaid_data['Child_Date_of_Birth'] = pd.to_datetime(medicaid_data['Child_Date_of_Birth'], errors='coerce').dt.strftime('%Y-%m-%d')
+
+            # Debugging: Print out sample rows to check names before merge
+            print("\nDatabase Data (sample rows):")
+            print(database_data[['Mother_First_Name', 'Mother_Last_Name', 'Child_Date_of_Birth']].head())
+
+            print("\nMedicaid Data (sample rows):")
+            print(medicaid_data[['Mother_First_Name', 'Last_Name', 'Child_Date_of_Birth']].head())
 
             # Merge the two datasets based on Mother's First Name, Last Name, and Child's Date of Birth
             combined_data = pd.merge(
@@ -66,11 +73,9 @@ class CombineDataCommand(Command):
                 medicaid_data,
                 left_on=['Mother_First_Name', 'Mother_Last_Name', 'Child_Date_of_Birth'],
                 right_on=['Mother_First_Name', 'Last_Name', 'Child_Date_of_Birth'],
-                how='outer'
+                how='inner',  # Use inner to ensure only exact matches are pulled
+                suffixes=('_db', '_medicaid')
             )
-
-            # Drop the redundant 'Last_Name' column
-            combined_data.drop(columns=['Last_Name'], inplace=True)
 
             # Handle matched and unmatched data
             unmatched_in_database = combined_data[combined_data['Mother_First_Name'].isna()]
@@ -99,7 +104,7 @@ class CombineDataCommand(Command):
 
         except Exception as e:
             messagebox.showerror("Error", f"Error combining data: {e}")
-            print(f"Error: {e}")
+            return None
 
 
 class Invoker:
