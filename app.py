@@ -85,26 +85,39 @@ class App:
         mother_id = selected_name_parts[0]
         child_first_name = selected_name_parts[1]
         child_last_name = selected_name_parts[2]
+        child_dob = selected_name_parts[-1].strip('()')  # Assuming the DOB is at the end
 
-        # Get the child's profile from the combined data
-        child_data = self.combined_data.loc[(self.combined_data['Mother_ID'] == mother_id) &
-                                            (self.combined_data['Child_First_Name'] == child_first_name) &
-                                            (self.combined_data['Child_Last_Name'] == child_last_name)]
+        # Query the child's profile from the combined data
+        try:
+            child_data = self.combined_data.loc[
+                (self.combined_data['Mother_ID'].astype(str) == str(mother_id)) &
+                (self.combined_data['Child_First_Name'].str.lower() == child_first_name.lower()) &
+                (self.combined_data['Child_Last_Name'].str.lower() == child_last_name.lower()) &
+                (self.combined_data['Child_Date_of_Birth'] == child_dob)
+            ]
+            
+            if child_data.empty:
+                print("No matching data found:")
+                print(f"Mother ID: {mother_id}, Child Name: {child_first_name} {child_last_name}, DOB: {child_dob}")
+                messagebox.showerror("Error", f"No data found for {child_first_name} {child_last_name}.")
+                # print("Combined Data (First 5 Rows):")
+                # print(self.combined_data.head())
+                return
 
-        if child_data.empty:
-            messagebox.showerror("Error", f"No data found for {child_first_name} {child_last_name}.")
-            return
+            # Get the first matching row
+            child_data = child_data.iloc[0]
 
-        child_data = child_data.iloc[0]  # Get the first matching row
+            # Show profile window
+            profile_window = tk.Toplevel(self.root)
+            profile_window.title(f"Profile of {child_first_name} {child_last_name}")
 
-        # Show profile window
-        profile_window = tk.Toplevel(self.root)
-        profile_window.title(f"Profile of {child_first_name} {child_last_name}")
+            # Display child's information in the profile window
+            for col in child_data.index:
+                label = tk.Label(profile_window, text=f"{col}: {child_data[col]}")
+                label.pack(anchor='w')
 
-        # Display child's information in the profile window
-        for col in child_data.index:
-            label = tk.Label(profile_window, text=f"{col}: {child_data[col]}")
-            label.pack(anchor='w')
+        except Exception as e:
+            messagebox.showerror("Error", f"Error loading profile: {e}")
 
 
 if __name__ == "__main__":
