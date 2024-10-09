@@ -55,21 +55,51 @@ class App:
             messagebox.showwarning("Warning", "Please read two Excel files first.")
 
     def display_combined_names(self):
-        """Display a new window with the list of combined names (Mother ID, Child Name, DOB)"""
+        """Display a new window with the list of combined names (Mother ID, Child Name, DOB) and add a search bar"""
         combined_names_window = tk.Toplevel(self.root)
         combined_names_window.title("Combined Data")
 
+        # Frame for search bar and button
+        search_frame = tk.Frame(combined_names_window)
+        search_frame.pack(fill=tk.X, pady=5)
+
+        # Search Entry widget
+        self.search_var = tk.StringVar()
+        search_entry = tk.Entry(search_frame, textvariable=self.search_var)
+        search_entry.pack(side=tk.LEFT, padx=10, fill=tk.X, expand=True)
+
+        # Search Button
+        search_button = tk.Button(search_frame, text="Search", command=self.search_combined_names)
+        search_button.pack(side=tk.RIGHT, padx=10)
+
         # Listbox to display combined names
-        listbox = tk.Listbox(combined_names_window)
-        listbox.pack(fill=tk.BOTH, expand=True)
+        self.listbox = tk.Listbox(combined_names_window)
+        self.listbox.pack(fill=tk.BOTH, expand=True)
 
         # Add the combined names to the listbox (Mother ID, Child Name, DOB)
-        for index, row in self.combined_data.iterrows():
-            display_text = f"{row['Mother_ID']} {row['Child_First_Name']} {row['Child_Last_Name']} (DOB: {row['Child_Date_of_Birth']})"
-            listbox.insert(tk.END, display_text)
+        self.update_combined_names_listbox()
 
         # Bind double-click event to open child profile
-        listbox.bind('<Double-1>', lambda event: self.show_child_profile(event, listbox))
+        self.listbox.bind('<Double-1>', lambda event: self.show_child_profile(event, self.listbox))
+
+
+    def update_combined_names_listbox(self):
+        """Update the Listbox with combined names (Mother ID, Child Name, DOB)"""
+        self.listbox.delete(0, tk.END)  # Clear the Listbox
+        search_term = self.search_var.get().lower()
+
+        for index, row in self.combined_data.iterrows():
+            display_text = f"{row['Mother_ID']} {row['Child_First_Name']} {row['Child_Last_Name']} (DOB: {row['Child_Date_of_Birth']})"
+            
+            # Only add the name if it matches the search term (or if the search term is empty)
+            if search_term in display_text.lower():
+                self.listbox.insert(tk.END, display_text)
+
+
+    def search_combined_names(self):
+        """Filter the combined names based on the search term"""
+        self.update_combined_names_listbox()
+
 
     def show_child_profile(self, event, listbox):
         """Show child profile when a name is double-clicked"""
@@ -85,26 +115,39 @@ class App:
         mother_id = selected_name_parts[0]
         child_first_name = selected_name_parts[1]
         child_last_name = selected_name_parts[2]
+        child_dob = selected_name_parts[-1].strip('()')  # Assuming the DOB is at the end
 
-        # Get the child's profile from the combined data
-        child_data = self.combined_data.loc[(self.combined_data['Mother_ID'] == mother_id) &
-                                            (self.combined_data['Child_First_Name'] == child_first_name) &
-                                            (self.combined_data['Child_Last_Name'] == child_last_name)]
+        # Query the child's profile from the combined data
+        try:
+            child_data = self.combined_data.loc[
+                (self.combined_data['Mother_ID'].astype(str) == str(mother_id)) &
+                (self.combined_data['Child_First_Name'].str.lower() == child_first_name.lower()) &
+                (self.combined_data['Child_Last_Name'].str.lower() == child_last_name.lower()) &
+                (self.combined_data['Child_Date_of_Birth'] == child_dob)
+            ]
+            
+            if child_data.empty:
+                print("No matching data found:")
+                print(f"Mother ID: {mother_id}, Child Name: {child_first_name} {child_last_name}, DOB: {child_dob}")
+                messagebox.showerror("Error", f"No data found for {child_first_name} {child_last_name}.")
+                # print("Combined Data (First 5 Rows):")
+                # print(self.combined_data.head())
+                return
 
-        if child_data.empty:
-            messagebox.showerror("Error", f"No data found for {child_first_name} {child_last_name}.")
-            return
+            # Get the first matching row
+            child_data = child_data.iloc[0]
 
-        child_data = child_data.iloc[0]  # Get the first matching row
+            # Show profile window
+            profile_window = tk.Toplevel(self.root)
+            profile_window.title(f"Profile of {child_first_name} {child_last_name}")
 
-        # Show profile window
-        profile_window = tk.Toplevel(self.root)
-        profile_window.title(f"Profile of {child_first_name} {child_last_name}")
+            # Display child's information in the profile window
+            for col in child_data.index:
+                label = tk.Label(profile_window, text=f"{col}: {child_data[col]}")
+                label.pack(anchor='w')
 
-        # Display child's information in the profile window
-        for col in child_data.index:
-            label = tk.Label(profile_window, text=f"{col}: {child_data[col]}")
-            label.pack(anchor='w')
+        except Exception as e:
+            messagebox.showerror("Error", f"Error loading profile: {e}")
 
 
 if __name__ == "__main__":
