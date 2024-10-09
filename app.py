@@ -26,7 +26,7 @@ class App:
         self.read_button2.pack(pady=5)
 
         # Button to combine the data
-        self.combine_button = tk.Button(self.root, text="Combine Data", command=self.combine_data)
+        self.combine_button = tk.Button(self.root, text="Combine Data", command=self.invoke_combine_data)
         self.combine_button.pack(pady=5)
 
     def read_excel_file(self):
@@ -37,7 +37,7 @@ class App:
         if data_frame is not None:
             self.data_frames.append(data_frame)
 
-    def combine_data(self):
+    def invoke_combine_data(self):
         """Combine the two read Excel files and display the combined names"""
         if len(self.data_frames) >= 2:
             # Combine data
