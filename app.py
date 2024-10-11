@@ -1,7 +1,11 @@
 import tkinter as tk
 from tkinter import filedialog, messagebox
 import pandas as pd
+import logging
 from invoker import ReadExcelCommand, CombineDataCommand, Invoker
+
+# Setup logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 class App:
     """
@@ -29,6 +33,8 @@ class App:
         self.data_frames = []  # Store the two data frames to be combined
         self.combined_data = None  # Store the combined data
 
+        logging.info("Application initialized.")
+        
         # Create UI elements
         self.create_widgets()
 
@@ -47,6 +53,8 @@ class App:
         self.combine_button = tk.Button(self.root, text="Combine Data", command=self.combine_data)
         self.combine_button.pack(pady=5)
 
+        logging.info("UI widgets created.")
+
     def read_excel_file(self):
         """
         Read an Excel file and append its data to the list of data frames.
@@ -56,6 +64,9 @@ class App:
         data_frame = command.execute()
         if data_frame is not None:
             self.data_frames.append(data_frame)
+            logging.info(f"Data from {command.filepath} successfully read and added to data frames.")
+        else:
+            logging.warning("No data frame returned from the file read.")
 
     def combine_data(self):
         """
@@ -63,6 +74,7 @@ class App:
         This is done using the CombineDataCommand which merges the two data frames.
         """
         if len(self.data_frames) >= 2:
+            logging.info("Attempting to combine data from two Excel files.")
             command = CombineDataCommand(self, self.data_frames)
             self.invoker.add_command(command)
             combined_data = command.execute()
@@ -72,8 +84,10 @@ class App:
                 self.combined_data = combined_data
                 # Display the combined names in the UI window
                 self.display_combined_names()
+                logging.info("Data combined and displayed successfully.")
         else:
             messagebox.showwarning("Warning", "Please read two Excel files first.")
+            logging.warning("Attempted to combine data with less than two files.")
 
     def display_combined_names(self):
         """
@@ -82,6 +96,8 @@ class App:
         """
         combined_names_window = tk.Toplevel(self.root)
         combined_names_window.title("Combined Data")
+
+        logging.info("Displaying combined names window.")
 
         # Frame for search bar and button
         search_frame = tk.Frame(combined_names_window)
@@ -120,11 +136,14 @@ class App:
             # Only add the name if it matches the search term (or if the search term is empty)
             if search_term in display_text.lower():
                 self.listbox.insert(tk.END, display_text)
+        
+        logging.info("Listbox updated with filtered names.")
 
     def search_combined_names(self):
         """
         Filter the combined names based on the search term.
         """
+        logging.info(f"Searching names with term: {self.search_var.get()}")
         self.update_combined_names_listbox()
 
     def show_child_profile(self, event, listbox):
@@ -159,6 +178,7 @@ class App:
             ]
             
             if child_data.empty:
+                logging.error(f"No data found for {child_first_name} {child_last_name}.")
                 messagebox.showerror("Error", f"No data found for {child_first_name} {child_last_name}.")
                 return
 
@@ -174,7 +194,10 @@ class App:
                 label = tk.Label(profile_window, text=f"{col.replace('_', ' ')}: {child_data[col]}")
                 label.pack(anchor='w')
 
+            logging.info(f"Profile displayed for {child_first_name} {child_last_name}.")
+
         except Exception as e:
+            logging.error(f"Error loading profile: {e}")
             messagebox.showerror("Error", f"Error loading profile: {e}")
 
 if __name__ == "__main__":
