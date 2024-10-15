@@ -178,6 +178,7 @@ class App:
         """
         selected_item = self.treeview.selection()
         if not selected_item:
+            logging.warning("No profile selected for viewing.")
             return  # If no selection, return
 
         # Get selected entry values
@@ -190,6 +191,8 @@ class App:
         child_last_name = child_name_parts[1]
         child_dob = selected_values[2]
 
+        logging.info(f"Viewing profile for Mother ID: {mother_id}, Child: {child_first_name} {child_last_name}, DOB: {child_dob}")
+
         # Query the child's profile from the combined data
         try:
             child_data = self.combined_data.loc[
@@ -198,9 +201,10 @@ class App:
                 (self.combined_data['Child_Last_Name'].str.lower() == child_last_name.lower()) &
                 (self.combined_data['Child_Date_of_Birth'] == child_dob)
             ]
-            
+
             if child_data.empty:
                 messagebox.showerror("Error", f"No data found for {child_first_name} {child_last_name}.")
+                logging.error(f"No data found for Mother ID: {mother_id}, Child: {child_first_name} {child_last_name}, DOB: {child_dob}")
                 return
 
             # Get the first matching row
@@ -255,15 +259,18 @@ class App:
             copy_button = tk.Button(profile_frame, text="Copy Profile Info", command=lambda: self.copy_to_clipboard(mother_info_text, child_info_text, address_info_text))
             copy_button.pack(pady=(10, 5))
 
+            logging.info(f"Profile for {child_first_name} {child_last_name} displayed successfully.")
+
         except Exception as e:
             messagebox.showerror("Error", f"Error loading profile: {e}")
-            logging.error(f"Error loading profile: {e}")
+            logging.error(f"Error loading profile for {child_first_name} {child_last_name}: {e}")
+
 
 
     def copy_to_clipboard(self, mother_info_text, child_info_text, address_info_text=None):
         """
         Copies the given text to the clipboard, formatted for better readability.
-        
+
         Args:
             mother_info_text (str): Mother's information to be copied.
             child_info_text (str): Child's information to be copied.
@@ -283,11 +290,18 @@ class App:
                 f"{address_info_text}"
             )
 
+        # Log the content being copied
+        logging.info("Copying the following profile information to clipboard:")
+        logging.info(f"Mother Info:\n{mother_info_text}")
+        logging.info(f"Child Info:\n{child_info_text}")
+        if address_info_text:
+            logging.info(f"Address Info:\n{address_info_text}")
+
         # Clear the clipboard and append the formatted text
         self.root.clipboard_clear()
         self.root.clipboard_append(copied_text)
         messagebox.showinfo("Info", "Profile info copied to clipboard.")
-
+        logging.info("Profile info successfully copied to clipboard.")
 
 if __name__ == "__main__":
     root = tk.Tk()
