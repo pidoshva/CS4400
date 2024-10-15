@@ -12,44 +12,60 @@ class Command:
         """
         raise NotImplementedError("Subclasses must implement the 'execute' method")
 
-
 class ReadExcelCommand(Command):
     """
-    Command to read Excel files
-    Prompts file explorer to select an xlsx or xls file type(excel)
+    Command to read Excel files.
+    This command prompts a file explorer for selecting Excel files.
+    
+    Args:
+        app: The application object that holds the application state.
     """
     def __init__(self, app):
         self.app = app
         self.filepath = None
 
     def execute(self):
+        """
+        Execute the file selection and read the Excel data into a pandas DataFrame.
+        
+        Returns:
+            DataFrame: A pandas DataFrame representing the content of the Excel file.
+        """
         self.filepath = filedialog.askopenfilename(filetypes=[("Excel files", "*.xlsx *.xls")])
         if not self.filepath:
             messagebox.showerror("Error", "No file selected.")
             return None
 
         try:
-            #data is a datagram variable type from pandas representing a database from the excel file type
+            # Read the Excel file into a DataFrame and normalize column names
             data = pd.read_excel(self.filepath)
-            # Read the Excel file and replace spaces in columns for easier access
             data.columns = [column.replace(" ", "_") for column in data.columns]
             return data
         except Exception as e:
             messagebox.showerror("Error", f"Error reading file '{self.filepath}': {e}")
             return None
 
-
 class CombineDataCommand(Command):
     """
-    Command to combine two datagrams by Mother's Name and Child's DOB
-    Inner left join using a compound key of mother's last name, child's last name, and DOB
-    Two files should be selected for this command to function properly. If not an exception will be thrown.
+    Command to combine two data sets (Excel files) by Mother's Name and Child's Date of Birth.
+    
+    Args:
+        app: The application object.
+        data_frames (list): List of data frames from the two Excel files.
     """
     def __init__(self, app, data_frames):
         self.app = app
         self.data_frames = data_frames
 
     def execute(self):
+        """
+        Execute the combination of two data frames based on Mother's Name and Child's Date of Birth.
+        The result is saved to an Excel file and returned for UI display.
+
+        Returns:
+            DataFrame: A
+            DataFrame: A pandas DataFrame containing the combined data.
+        """
         try:
             # Extract the two data frames
             database_data = self.data_frames[0]
@@ -61,7 +77,7 @@ class CombineDataCommand(Command):
                     return ''.join(e for e in name if e.isalnum()).strip().lower()
                 return name
 
-            # Normalize the two datagrams
+            # Normalize the data for consistent merging
             database_data['Mother_First_Name'] = database_data['Mother_First_Name'].apply(normalize_name)
             database_data['Mother_Last_Name'] = database_data['Mother_Last_Name'].apply(normalize_name)
             medicaid_data['Mother_First_Name'] = medicaid_data['Mother_First_Name'].apply(normalize_name)
@@ -76,13 +92,12 @@ class CombineDataCommand(Command):
             medicaid_data['Child_Date_of_Birth'] = pd.to_datetime(medicaid_data['Child_Date_of_Birth'], errors='coerce').dt.strftime('%Y-%m-%d')
 
             # Merge the two datasets based on Mother's First Name, Last Name, and Child's Date of Birth
-            # The Resulting datagram represents a inner left join of the two datagrams as a database
             combined_data = pd.merge(
                 database_data,
                 medicaid_data,
                 left_on=['Mother_First_Name', 'Mother_Last_Name', 'Child_Date_of_Birth'],
                 right_on=['Mother_First_Name', 'Last_Name', 'Child_Date_of_Birth'],
-                how='inner',  # Use inner to ensure only exact matches are pulled
+                how='inner',  # Use inner join to ensure only exact matches are included
                 suffixes=('_db', '_medicaid')
             )
 
@@ -108,23 +123,26 @@ class CombineDataCommand(Command):
             messagebox.showerror("Error", f"Error combining data: {e}")
             return None
 
-
-
 class Invoker:
     """
-    Invoker class to store and execute commands
-    The Invoker contains the history of all commands issued.
-    The main entry point after a tkinter button is clicked, 
-    creating an anonymous Command object.
+    Invoker class to store and execute commands.
+    The Invoker contains the history of all commands issued. It is responsible for executing these commands sequentially.
     """
     def __init__(self):
         self.commands = []
 
     def add_command(self, command):
-        """Add a command to the invoker"""
+        """
+        Add a command to the invoker.
+
+        Args:
+            command (Command): The command to be added.
+        """
         self.commands.append(command)
 
     def execute_commands(self):
-        """Execute all commands in sequence"""
+        """
+        Execute all commands in sequence.
+        """
         for command in self.commands:
             command.execute()

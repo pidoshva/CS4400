@@ -3,9 +3,24 @@ from tkinter import filedialog, messagebox
 import pandas as pd
 from invoker import ReadExcelCommand, CombineDataCommand, Invoker
 
-
 class App:
+    """
+    The main application class for combining two Excel files.
+    It handles user interactions for reading files, combining data, and displaying profiles.
+    
+    Attributes:
+        root (Tk): The main root window for tkinter.
+        invoker (Invoker): The Invoker object that stores and executes commands.
+        data_frames (list): List to store the data frames from two Excel files.
+        combined_data (DataFrame): The combined data after merging the two data frames.
+    """
     def __init__(self, root):
+        """
+        Initialize the main application, setup the UI, and initialize variables.
+
+        Args:
+            root (Tk): The main root window for tkinter.
+        """
         self.root = root
         self.root.title("Excel Combiner")
 
@@ -18,6 +33,9 @@ class App:
         self.create_widgets()
 
     def create_widgets(self):
+        """
+        Create the UI elements including buttons to read Excel files, combine data, and display profiles.
+        """
         # Buttons for reading two Excel files
         self.read_button1 = tk.Button(self.root, text="Read Excel File 1", command=self.read_excel_file)
         self.read_button1.pack(pady=5)
@@ -30,7 +48,9 @@ class App:
         self.combine_button.pack(pady=5)
 
     def read_excel_file(self):
-        """Read an Excel file and append its data to the list"""
+        """
+        Read an Excel file and append its data to the list of data frames.
+        """
         command = ReadExcelCommand(self)
         self.invoker.add_command(command)
         data_frame = command.execute()
@@ -38,9 +58,11 @@ class App:
             self.data_frames.append(data_frame)
 
     def combine_data(self):
-        """Combine the two read Excel files and display the combined names"""
+        """
+        Combine the two read Excel files and display the combined names.
+        This is done using the CombineDataCommand which merges the two data frames.
+        """
         if len(self.data_frames) >= 2:
-            # Combine data
             command = CombineDataCommand(self, self.data_frames)
             self.invoker.add_command(command)
             combined_data = command.execute()
@@ -50,12 +72,14 @@ class App:
                 self.combined_data = combined_data
                 # Display the combined names in the UI window
                 self.display_combined_names()
-
         else:
             messagebox.showwarning("Warning", "Please read two Excel files first.")
 
     def display_combined_names(self):
-        """Display a new window with the list of combined names (Mother ID, Child Name, DOB) and add a search bar"""
+        """
+        Display a new window with the list of combined names (Mother ID, Child Name, DOB) 
+        and add a search bar for filtering.
+        """
         combined_names_window = tk.Toplevel(self.root)
         combined_names_window.title("Combined Data")
 
@@ -82,9 +106,11 @@ class App:
         # Bind double-click event to open child profile
         self.listbox.bind('<Double-1>', lambda event: self.show_child_profile(event, self.listbox))
 
-
     def update_combined_names_listbox(self):
-        """Update the Listbox with combined names (Mother ID, Child Name, DOB)"""
+        """
+        Update the Listbox with combined names (Mother ID, Child Name, DOB), 
+        filtering the results based on the search term.
+        """
         self.listbox.delete(0, tk.END)  # Clear the Listbox
         search_term = self.search_var.get().lower()
 
@@ -95,14 +121,20 @@ class App:
             if search_term in display_text.lower():
                 self.listbox.insert(tk.END, display_text)
 
-
     def search_combined_names(self):
-        """Filter the combined names based on the search term"""
+        """
+        Filter the combined names based on the search term.
+        """
         self.update_combined_names_listbox()
 
-
     def show_child_profile(self, event, listbox):
-        """Show child profile when a name is double-clicked"""
+        """
+        Show child profile when a name is double-clicked from the listbox.
+
+        Args:
+            event: The event that triggers the double-click.
+            listbox: The listbox widget containing the combined names.
+        """
         selected_index = listbox.curselection()
         if not selected_index:
             return  # If no selection, return
@@ -127,11 +159,7 @@ class App:
             ]
             
             if child_data.empty:
-                print("No matching data found:")
-                print(f"Mother ID: {mother_id}, Child Name: {child_first_name} {child_last_name}, DOB: {child_dob}")
                 messagebox.showerror("Error", f"No data found for {child_first_name} {child_last_name}.")
-                # print("Combined Data (First 5 Rows):")
-                # print(self.combined_data.head())
                 return
 
             # Get the first matching row
@@ -143,12 +171,11 @@ class App:
 
             # Display child's information in the profile window
             for col in child_data.index:
-                label = tk.Label(profile_window, text=f"{col}: {child_data[col]}")
+                label = tk.Label(profile_window, text=f"{col.replace('_', ' ')}: {child_data[col]}")
                 label.pack(anchor='w')
 
         except Exception as e:
             messagebox.showerror("Error", f"Error loading profile: {e}")
-
 
 if __name__ == "__main__":
     root = tk.Tk()
