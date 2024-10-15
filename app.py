@@ -145,6 +145,11 @@ class App:
         columns = ("Mother ID", "Child Name", "Child DOB")
         self.treeview = ttk.Treeview(combined_names_window, columns=columns, show='headings')
 
+        # Create a scrollbar widgit
+        tree_scroll = tk.Scrollbar(self.treeview, command=self.treeview.yview)
+        tree_scroll.pack(side="right", fill="y")
+        self.treeview.configure(yscrollcommand=tree_scroll.set)
+
         # Define headings and column widths
         self.treeview.heading("Mother ID", text="Mother ID")
         self.treeview.heading("Child Name", text="Child Name")
@@ -162,6 +167,15 @@ class App:
 
         # Bind double-click event to open child profile
         self.treeview.bind('<Double-1>', lambda event: self.show_child_profile(event))
+
+
+        """Binding function for the scrollbar component"""
+        def onFrameConfigure(self, event):
+            '''Reset the scroll region to encompass the inner frame'''
+            self.treeview.configure(scrollregion=self.canvas.bbox("all"))
+
+        # Bind onFrameConfigure to the treeview to allow updates to scrollbar when scrolling.
+        self.treeview.bind("<Configure>", self.onFrameConfigure)
 
         # Mainloop to check for closing of the window.
         combined_names_window.mainloop()
