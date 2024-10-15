@@ -1,5 +1,9 @@
 import pandas as pd
 from tkinter import filedialog, messagebox
+import logging
+
+# Setup logging
+logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
 class Command:
     """
@@ -33,6 +37,7 @@ class ReadExcelCommand(Command):
         """
         self.filepath = filedialog.askopenfilename(filetypes=[("Excel files", "*.xlsx *.xls")])
         if not self.filepath:
+            logging.error("No file selected.")
             messagebox.showerror("Error", "No file selected.")
             return None
 
@@ -40,8 +45,10 @@ class ReadExcelCommand(Command):
             # Read the Excel file into a DataFrame and normalize column names
             data = pd.read_excel(self.filepath)
             data.columns = [column.replace(" ", "_") for column in data.columns]
+            logging.info(f"Successfully read file: {self.filepath}")
             return data
         except Exception as e:
+            logging.error(f"Error reading file '{self.filepath}': {e}")
             messagebox.showerror("Error", f"Error reading file '{self.filepath}': {e}")
             return None
 
@@ -63,7 +70,6 @@ class CombineDataCommand(Command):
         The result is saved to an Excel file and returned for UI display.
 
         Returns:
-            DataFrame: A
             DataFrame: A pandas DataFrame containing the combined data.
         """
         try:
@@ -83,6 +89,8 @@ class CombineDataCommand(Command):
             medicaid_data['Mother_First_Name'] = medicaid_data['Mother_First_Name'].apply(normalize_name)
             medicaid_data['Last_Name'] = medicaid_data['Last_Name'].apply(normalize_name)
 
+            logging.info("Normalized names in both datasets.")
+
             # Ensure both datasets have a standardized Child Date of Birth column
             database_data.rename(columns={'DOB': 'Child_Date_of_Birth'}, inplace=True)
             medicaid_data.rename(columns={'Child_DOB': 'Child_Date_of_Birth'}, inplace=True)
@@ -90,6 +98,8 @@ class CombineDataCommand(Command):
             # Convert Child_Date_of_Birth to a consistent format
             database_data['Child_Date_of_Birth'] = pd.to_datetime(database_data['Child_Date_of_Birth'], errors='coerce').dt.strftime('%Y-%m-%d')
             medicaid_data['Child_Date_of_Birth'] = pd.to_datetime(medicaid_data['Child_Date_of_Birth'], errors='coerce').dt.strftime('%Y-%m-%d')
+
+            logging.info("Standardized and formatted Child_Date_of_Birth columns.")
 
             # Merge the two datasets based on Mother's First Name, Last Name, and Child's Date of Birth
             combined_data = pd.merge(
@@ -101,6 +111,8 @@ class CombineDataCommand(Command):
                 suffixes=('_db', '_medicaid')
             )
 
+            logging.info("Merged datasets successfully.")
+
             # Drop the duplicated 'Last_Name' column from Medicaid data
             combined_data.drop(columns=['Last_Name'], inplace=True)
 
@@ -110,16 +122,19 @@ class CombineDataCommand(Command):
             combined_data['Child_First_Name'] = combined_data['Child_First_Name'].str.capitalize()
             combined_data['Child_Last_Name'] = combined_data['Child_Last_Name'].str.capitalize()
 
+            logging.info("Capitalized the first letter of names.")
+
             # Save the matched data to an Excel file
             matched_file_path = 'combined_matched_data.xlsx'
             combined_data.to_excel(matched_file_path, index=False)
-            print(f"Matched data saved to {matched_file_path}")
+            logging.info(f"Matched data saved to {matched_file_path}")
 
             # Return the matched data to the app for display
             self.app.combined_data = combined_data
             return combined_data
 
         except Exception as e:
+            logging.error(f"Error combining data: {e}")
             messagebox.showerror("Error", f"Error combining data: {e}")
             return None
 
@@ -139,6 +154,7 @@ class Invoker:
             command (Command): The command to be added.
         """
         self.commands.append(command)
+        logging.info(f"Command added: {command.__class__.__name__}")
 
     def execute_commands(self):
         """
@@ -146,3 +162,4 @@ class Invoker:
         """
         for command in self.commands:
             command.execute()
+            logging.info(f"Executed command: {command.__class__.__name__}")
