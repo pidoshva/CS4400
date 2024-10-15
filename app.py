@@ -43,18 +43,27 @@ class App:
         """
         Create the UI elements including buttons to read Excel files, combine data, and display profiles.
         """
-        # Buttons for reading two Excel files
-        self.read_button1 = tk.Button(self.root, text="Read Excel File 1", command=self.read_excel_file)
-        self.read_button1.pack(pady=5)
+        # Set the initial size of the root window
+        self.root.geometry("500x300")  # Set the window size to 500x300
+        self.root.minsize(500, 300)  # Ensure the window does not resize smaller than this
 
-        self.read_button2 = tk.Button(self.root, text="Read Excel File 2", command=self.read_excel_file)
-        self.read_button2.pack(pady=5)
+        # Frame to hold the buttons and center them
+        button_frame = tk.Frame(self.root, padx=20, pady=20)
+        button_frame.pack(expand=True)  # Add padding to make the UI more spacious
+
+        # Buttons for reading two Excel files
+        self.read_button1 = tk.Button(button_frame, text="Read Excel File 1", command=self.read_excel_file, width=30, height=2)
+        self.read_button1.pack(pady=10)  # Add padding between buttons
+
+        self.read_button2 = tk.Button(button_frame, text="Read Excel File 2", command=self.read_excel_file, width=30, height=2)
+        self.read_button2.pack(pady=10)
 
         # Button to combine the data
-        self.combine_button = tk.Button(self.root, text="Combine Data", command=self.combine_data)
-        self.combine_button.pack(pady=5)
+        self.combine_button = tk.Button(button_frame, text="Combine Data", command=self.combine_data, width=30, height=2)
+        self.combine_button.pack(pady=10)
 
         logging.info("UI widgets created.")
+
 
     def read_excel_file(self):
         """
