@@ -192,39 +192,40 @@ class App:
             profile_frame = tk.Frame(profile_window, padx=10, pady=10)
             profile_frame.pack(fill=tk.BOTH, expand=True)
 
-            # Section for Mother Info
-            mother_label = tk.Label(profile_frame, text="Mother's Information", font=("Arial", 12, "bold"), anchor="w")
-            mother_label.pack(fill=tk.X, pady=(5, 0))
+            # Create a Text widget to display the profile information (copyable)
+            text_widget = tk.Text(profile_frame, wrap=tk.WORD)
+            text_widget.pack(fill=tk.BOTH, expand=True)
 
-            mother_info = f"Mother ID: {child_data['Mother_ID']}\n" \
+            # Insert Mother's information
+            mother_info = f"Mother's Information\n" \
+                        f"--------------------\n" \
+                        f"Mother ID: {child_data['Mother_ID']}\n" \
                         f"Mother First Name: {child_data['Mother_First_Name']}\n" \
-                        f"Mother Last Name: {child_data['Mother_Last_Name']}"
-            mother_info_label = tk.Label(profile_frame, text=mother_info, justify=tk.LEFT)
-            mother_info_label.pack(fill=tk.X, pady=5)
+                        f"Mother Last Name: {child_data['Mother_Last_Name']}\n\n"
+            text_widget.insert(tk.END, mother_info)
 
-            # Section for Child Info
-            child_label = tk.Label(profile_frame, text="Child's Information", font=("Arial", 12, "bold"), anchor="w")
-            child_label.pack(fill=tk.X, pady=(10, 0))
-
-            child_info = f"Child First Name: {child_data['Child_First_Name']}\n" \
+            # Insert Child's information
+            child_info = f"Child's Information\n" \
+                        f"-------------------\n" \
+                        f"Child First Name: {child_data['Child_First_Name']}\n" \
                         f"Child Last Name: {child_data['Child_Last_Name']}\n" \
-                        f"Child Date of Birth: {child_data['Child_Date_of_Birth']}"
-            child_info_label = tk.Label(profile_frame, text=child_info, justify=tk.LEFT)
-            child_info_label.pack(fill=tk.X, pady=5)
+                        f"Child Date of Birth: {child_data['Child_Date_of_Birth']}\n\n"
+            text_widget.insert(tk.END, child_info)
 
-            # Section for Address and Contact Info (if exists)
+            # Insert Address and Contact Info if available
             if 'Street' in child_data and not pd.isnull(child_data['Street']):
-                address_label = tk.Label(profile_frame, text="Address & Contact Information", font=("Arial", 12, "bold"), anchor="w")
-                address_label.pack(fill=tk.X, pady=(10, 0))
-
-                address_info = f"Street: {child_data['Street']}\n" \
+                address_info = f"Address & Contact Information\n" \
+                            f"-----------------------------\n" \
+                            f"Street: {child_data['Street']}\n" \
                             f"City: {child_data['City']}\n" \
                             f"State: {child_data['State']}\n" \
                             f"ZIP: {child_data['ZIP']}\n" \
                             f"Phone #: {child_data['Phone_#']}\n" \
-                            f"Mobile #: {child_data['Mobile_#']}"
-                address_info_label = tk.Label(profile_frame, text=address_info, justify=tk.LEFT)
-                address_info_label.pack(fill=tk.X, pady=5)
+                            f"Mobile #: {child_data['Mobile_#']}\n"
+                text_widget.insert(tk.END, address_info)
+
+            # Make the text widget read-only
+            text_widget.config(state=tk.DISABLED)
 
         except Exception as e:
             messagebox.showerror("Error", f"Error loading profile: {e}")
