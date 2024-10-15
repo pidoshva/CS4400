@@ -3,6 +3,7 @@ from tkinter import filedialog, messagebox
 import pandas as pd
 import logging
 from invoker import ReadExcelCommand, CombineDataCommand, Invoker
+import tkinter.ttk as ttk  # for treeview
 
 # Setup logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -92,12 +93,17 @@ class App:
     def display_combined_names(self):
         """
         Display a new window with the list of combined names (Mother ID, Child Name, DOB) 
-        and add a search bar for filtering.
+        using a Treeview for better data organization and readability.
         """
         combined_names_window = tk.Toplevel(self.root)
         combined_names_window.title("Combined Data")
 
         logging.info("Displaying combined names window.")
+
+        # Set the window size and allow resizing
+        combined_names_window.geometry("1000x600")  # Set initial window size
+        combined_names_window.minsize(800, 400)  # Set minimum window size
+        combined_names_window.resizable(True, True)  # Allow both horizontal and vertical resizing
 
         # Frame for search bar and button
         search_frame = tk.Frame(combined_names_window)
@@ -112,61 +118,77 @@ class App:
         search_button = tk.Button(search_frame, text="Search", command=self.search_combined_names)
         search_button.pack(side=tk.RIGHT, padx=10)
 
-        # Listbox to display combined names
-        self.listbox = tk.Listbox(combined_names_window)
-        self.listbox.pack(fill=tk.BOTH, expand=True)
+        # Create a Treeview widget to display the data in columns
+        columns = ("Mother ID", "Child Name", "Child DOB")
+        self.treeview = ttk.Treeview(combined_names_window, columns=columns, show='headings')
 
-        # Add the combined names to the listbox (Mother ID, Child Name, DOB)
-        self.update_combined_names_listbox()
+        # Define headings and column widths
+        self.treeview.heading("Mother ID", text="Mother ID")
+        self.treeview.heading("Child Name", text="Child Name")
+        self.treeview.heading("Child DOB", text="Child DOB")
+        
+        self.treeview.column("Mother ID", width=150, anchor="center")
+        self.treeview.column("Child Name", width=250, anchor="center")
+        self.treeview.column("Child DOB", width=150, anchor="center")
+
+        # Populate the treeview with the combined data
+        self.update_combined_names()
+
+        # Add the treeview to the window and make it fill the available space
+        self.treeview.pack(fill=tk.BOTH, expand=True)
 
         # Bind double-click event to open child profile
-        self.listbox.bind('<Double-1>', lambda event: self.show_child_profile(event, self.listbox))
+        self.treeview.bind('<Double-1>', lambda event: self.show_child_profile(event))
 
-    def update_combined_names_listbox(self):
+    def update_combined_names(self):
         """
-        Update the Listbox with combined names (Mother ID, Child Name, DOB), 
+        Update the Treeview with combined names (Mother ID, Child Name, DOB), 
         filtering the results based on the search term.
         """
-        self.listbox.delete(0, tk.END)  # Clear the Listbox
+        # Clear the current contents of the treeview
+        self.treeview.delete(*self.treeview.get_children())
+
+        # Get the search term for filtering
         search_term = self.search_var.get().lower()
 
+        # Populate the treeview with matching data
         for index, row in self.combined_data.iterrows():
-            display_text = f"{row['Mother_ID']} {row['Child_First_Name']} {row['Child_Last_Name']} (DOB: {row['Child_Date_of_Birth']})"
-            
-            # Only add the name if it matches the search term (or if the search term is empty)
+            child_name = f"{row['Child_First_Name']} {row['Child_Last_Name']}"
+            display_text = f"{row['Mother_ID']} {child_name} (DOB: {row['Child_Date_of_Birth']})"
+
+            # Only add the row if it matches the search term or if no search term is provided
             if search_term in display_text.lower():
-                self.listbox.insert(tk.END, display_text)
-        
-        logging.info("Listbox updated with filtered names.")
+                self.treeview.insert("", "end", values=(row['Mother_ID'], child_name, row['Child_Date_of_Birth']))
+
+        logging.info("Treeview updated with filtered names.")
 
     def search_combined_names(self):
         """
         Filter the combined names based on the search term.
         """
         logging.info(f"Searching names with term: {self.search_var.get()}")
-        self.update_combined_names_listbox()
+        self.update_combined_names()
 
-    def show_child_profile(self, event, listbox):
+    def show_child_profile(self, event):
         """
         Show child profile when a name is double-clicked from the listbox.
 
         Args:
             event: The event that triggers the double-click.
-            listbox: The listbox widget containing the combined names.
         """
-        selected_index = listbox.curselection()
-        if not selected_index:
+        selected_item = self.treeview.selection()
+        if not selected_item:
             return  # If no selection, return
 
-        # Get selected entry text
-        selected_name = listbox.get(selected_index)
+        # Get selected entry values
+        selected_values = self.treeview.item(selected_item, 'values')
 
         # Extract the Mother ID and the child's full name from the selection
-        selected_name_parts = selected_name.split(" ")
-        mother_id = selected_name_parts[0]
-        child_first_name = selected_name_parts[1]
-        child_last_name = selected_name_parts[2]
-        child_dob = selected_name_parts[-1].strip('()')  # Assuming the DOB is at the end
+        mother_id = selected_values[0]
+        child_name_parts = selected_values[1].split()
+        child_first_name = child_name_parts[0]
+        child_last_name = child_name_parts[1]
+        child_dob = selected_values[2]
 
         # Query the child's profile from the combined data
         try:
@@ -192,45 +214,63 @@ class App:
             profile_frame = tk.Frame(profile_window, padx=10, pady=10)
             profile_frame.pack(fill=tk.BOTH, expand=True)
 
-            # Create a Text widget to display the profile information (copyable)
-            text_widget = tk.Text(profile_frame, wrap=tk.WORD)
-            text_widget.pack(fill=tk.BOTH, expand=True)
+            # Group headers and display information
+            mother_info_label = tk.Label(profile_frame, text="Mother's Information", font=("Arial", 14, "bold"))
+            mother_info_label.pack(anchor='w', pady=(10, 0))
 
-            # Insert Mother's information
-            mother_info = f"Mother's Information\n" \
-                        f"--------------------\n" \
-                        f"Mother ID: {child_data['Mother_ID']}\n" \
-                        f"Mother First Name: {child_data['Mother_First_Name']}\n" \
-                        f"Mother Last Name: {child_data['Mother_Last_Name']}\n\n"
-            text_widget.insert(tk.END, mother_info)
+            mother_info_text = f"Mother ID: {child_data['Mother_ID']}\n" \
+                            f"First Name: {child_data['Mother_First_Name']}\n" \
+                            f"Last Name: {child_data['Mother_Last_Name']}\n"
 
-            # Insert Child's information
-            child_info = f"Child's Information\n" \
-                        f"-------------------\n" \
-                        f"Child First Name: {child_data['Child_First_Name']}\n" \
-                        f"Child Last Name: {child_data['Child_Last_Name']}\n" \
-                        f"Child Date of Birth: {child_data['Child_Date_of_Birth']}\n\n"
-            text_widget.insert(tk.END, child_info)
+            mother_info = tk.Label(profile_frame, text=mother_info_text, anchor='w', justify=tk.LEFT, font=("Arial",                            12))
+            mother_info.pack(anchor='w', pady=(5, 10))
 
-            # Insert Address and Contact Info if available
+            child_info_label = tk.Label(profile_frame, text="Child's Information", font=("Arial", 14, "bold"))
+            child_info_label.pack(anchor='w', pady=(10, 0))
+
+            child_info_text = f"First Name: {child_data['Child_First_Name']}\n" \
+                            f"Last Name: {child_data['Child_Last_Name']}\n" \
+                            f"Date of Birth: {child_data['Child_Date_of_Birth']}\n"
+
+            child_info = tk.Label(profile_frame, text=child_info_text, anchor='w', justify=tk.LEFT, font=("Arial", 12))
+            child_info.pack(anchor='w', pady=(5, 10))
+
+            # Check for and display address if available
             if 'Street' in child_data and not pd.isnull(child_data['Street']):
-                address_info = f"Address & Contact Information\n" \
-                            f"-----------------------------\n" \
-                            f"Street: {child_data['Street']}\n" \
-                            f"City: {child_data['City']}\n" \
-                            f"State: {child_data['State']}\n" \
-                            f"ZIP: {child_data['ZIP']}\n" \
-                            f"Phone #: {child_data['Phone_#']}\n" \
-                            f"Mobile #: {child_data['Mobile_#']}\n"
-                text_widget.insert(tk.END, address_info)
+                address_info_label = tk.Label(profile_frame, text="Address & Contact Information", font=("Arial", 14, "bold"))
+                address_info_label.pack(anchor='w', pady=(10, 0))
 
-            # Make the text widget read-only
-            text_widget.config(state=tk.DISABLED)
+                address_info_text = f"Street: {child_data['Street']}\n" \
+                                    f"City: {child_data['City']}\n" \
+                                    f"State: {child_data['State']}\n" \
+                                    f"ZIP: {child_data['ZIP']}\n" \
+                                    f"Phone #: {child_data['Phone_#']}\n" \
+                                    f"Mobile #: {child_data['Mobile_#']}\n"
+
+                address_info = tk.Label(profile_frame, text=address_info_text, anchor='w', justify=tk.LEFT, font=("Arial", 12))
+                address_info.pack(anchor='w', pady=(5, 10))
+
+            # Option to copy text to clipboard
+            copy_button = tk.Button(profile_frame, text="Copy Profile Info", command=lambda: self.copy_to_clipboard(mother_info_text + child_info_text + (address_info_text if 'address_info_text' in locals() else '')))
+            copy_button.pack(pady=(10, 5))
 
         except Exception as e:
             messagebox.showerror("Error", f"Error loading profile: {e}")
+            logging.error(f"Error loading profile: {e}")
+
+    def copy_to_clipboard(self, text):
+        """
+        Copies the given text to the clipboard.
+        
+        Args:
+            text (str): The text to be copied.
+        """
+        self.root.clipboard_clear()
+        self.root.clipboard_append(text)
+        messagebox.showinfo("Info", "Profile info copied to clipboard.")
 
 if __name__ == "__main__":
     root = tk.Tk()
     app = App(root)
     root.mainloop()
+
