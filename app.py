@@ -178,7 +178,6 @@ class App:
             ]
             
             if child_data.empty:
-                logging.error(f"No data found for {child_first_name} {child_last_name}.")
                 messagebox.showerror("Error", f"No data found for {child_first_name} {child_last_name}.")
                 return
 
@@ -189,15 +188,45 @@ class App:
             profile_window = tk.Toplevel(self.root)
             profile_window.title(f"Profile of {child_first_name} {child_last_name}")
 
-            # Display child's information in the profile window
-            for col in child_data.index:
-                label = tk.Label(profile_window, text=f"{col.replace('_', ' ')}: {child_data[col]}")
-                label.pack(anchor='w')
+            # Create a frame for the profile layout
+            profile_frame = tk.Frame(profile_window, padx=10, pady=10)
+            profile_frame.pack(fill=tk.BOTH, expand=True)
 
-            logging.info(f"Profile displayed for {child_first_name} {child_last_name}.")
+            # Section for Mother Info
+            mother_label = tk.Label(profile_frame, text="Mother's Information", font=("Arial", 12, "bold"), anchor="w")
+            mother_label.pack(fill=tk.X, pady=(5, 0))
+
+            mother_info = f"Mother ID: {child_data['Mother_ID']}\n" \
+                        f"Mother First Name: {child_data['Mother_First_Name']}\n" \
+                        f"Mother Last Name: {child_data['Mother_Last_Name']}"
+            mother_info_label = tk.Label(profile_frame, text=mother_info, justify=tk.LEFT)
+            mother_info_label.pack(fill=tk.X, pady=5)
+
+            # Section for Child Info
+            child_label = tk.Label(profile_frame, text="Child's Information", font=("Arial", 12, "bold"), anchor="w")
+            child_label.pack(fill=tk.X, pady=(10, 0))
+
+            child_info = f"Child First Name: {child_data['Child_First_Name']}\n" \
+                        f"Child Last Name: {child_data['Child_Last_Name']}\n" \
+                        f"Child Date of Birth: {child_data['Child_Date_of_Birth']}"
+            child_info_label = tk.Label(profile_frame, text=child_info, justify=tk.LEFT)
+            child_info_label.pack(fill=tk.X, pady=5)
+
+            # Section for Address and Contact Info (if exists)
+            if 'Street' in child_data and not pd.isnull(child_data['Street']):
+                address_label = tk.Label(profile_frame, text="Address & Contact Information", font=("Arial", 12, "bold"), anchor="w")
+                address_label.pack(fill=tk.X, pady=(10, 0))
+
+                address_info = f"Street: {child_data['Street']}\n" \
+                            f"City: {child_data['City']}\n" \
+                            f"State: {child_data['State']}\n" \
+                            f"ZIP: {child_data['ZIP']}\n" \
+                            f"Phone #: {child_data['Phone_#']}\n" \
+                            f"Mobile #: {child_data['Mobile_#']}"
+                address_info_label = tk.Label(profile_frame, text=address_info, justify=tk.LEFT)
+                address_info_label.pack(fill=tk.X, pady=5)
 
         except Exception as e:
-            logging.error(f"Error loading profile: {e}")
             messagebox.showerror("Error", f"Error loading profile: {e}")
 
 if __name__ == "__main__":
