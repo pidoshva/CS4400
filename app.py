@@ -95,6 +95,7 @@ class App:
                 # Display the combined names in the UI window
                 self.display_combined_names()
                 logging.info("Data combined and displayed successfully.")
+                #empty out the existing data frames
         else:
             messagebox.showwarning("Warning", "Please read two Excel files first.")
             logging.warning("Attempted to combine data with less than two files.")
@@ -106,6 +107,19 @@ class App:
         """
         combined_names_window = tk.Toplevel(self.root)
         combined_names_window.title("Combined Data")
+
+        """
+        Inner function that describes the event of closing the cobined_names_window
+        On attempting to close a message will prompt the user to confirm.
+        On confirmation the sub-window will exit and all datagrams will be wiped.
+        """
+        def on_closing():
+            if tk.messagebox.askokcancel("Quit", "Do you want to exit this view?\nFiles must be uploaded to view the data again."):
+                combined_names_window.destroy()
+                self.data_frames.clear()
+                print(self.data_frames)
+
+        combined_names_window.protocol("WM_DELETE_WINDOW", on_closing)
 
         logging.info("Displaying combined names window.")
 
@@ -148,6 +162,9 @@ class App:
 
         # Bind double-click event to open child profile
         self.treeview.bind('<Double-1>', lambda event: self.show_child_profile(event))
+
+        # Mainloop to check for closing of the window.
+        combined_names_window.mainloop()
 
     def update_combined_names(self):
         """
