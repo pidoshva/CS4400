@@ -171,7 +171,7 @@ class App:
 
     def show_child_profile(self, event):
         """
-        Show child profile when a name is double-clicked from the listbox.
+        Show child profile when a name is double-clicked from the Treeview.
 
         Args:
             event: The event that triggers the double-click.
@@ -222,7 +222,7 @@ class App:
                             f"First Name: {child_data['Mother_First_Name']}\n" \
                             f"Last Name: {child_data['Mother_Last_Name']}\n"
 
-            mother_info = tk.Label(profile_frame, text=mother_info_text, anchor='w', justify=tk.LEFT, font=("Arial",                            12))
+            mother_info = tk.Label(profile_frame, text=mother_info_text, anchor='w', justify=tk.LEFT, font=("Arial", 12))
             mother_info.pack(anchor='w', pady=(5, 10))
 
             child_info_label = tk.Label(profile_frame, text="Child's Information", font=("Arial", 14, "bold"))
@@ -236,6 +236,7 @@ class App:
             child_info.pack(anchor='w', pady=(5, 10))
 
             # Check for and display address if available
+            address_info_text = None
             if 'Street' in child_data and not pd.isnull(child_data['Street']):
                 address_info_label = tk.Label(profile_frame, text="Address & Contact Information", font=("Arial", 14, "bold"))
                 address_info_label.pack(anchor='w', pady=(10, 0))
@@ -251,23 +252,42 @@ class App:
                 address_info.pack(anchor='w', pady=(5, 10))
 
             # Option to copy text to clipboard
-            copy_button = tk.Button(profile_frame, text="Copy Profile Info", command=lambda: self.copy_to_clipboard(mother_info_text + child_info_text + (address_info_text if 'address_info_text' in locals() else '')))
+            copy_button = tk.Button(profile_frame, text="Copy Profile Info", command=lambda: self.copy_to_clipboard(mother_info_text, child_info_text, address_info_text))
             copy_button.pack(pady=(10, 5))
 
         except Exception as e:
             messagebox.showerror("Error", f"Error loading profile: {e}")
             logging.error(f"Error loading profile: {e}")
 
-    def copy_to_clipboard(self, text):
+
+    def copy_to_clipboard(self, mother_info_text, child_info_text, address_info_text=None):
         """
-        Copies the given text to the clipboard.
+        Copies the given text to the clipboard, formatted for better readability.
         
         Args:
-            text (str): The text to be copied.
+            mother_info_text (str): Mother's information to be copied.
+            child_info_text (str): Child's information to be copied.
+            address_info_text (str, optional): Address and contact information to be copied.
         """
+        # Organize the sections of the profile for copying
+        copied_text = (
+            f"--- Mother's Information ---\n"
+            f"{mother_info_text}\n"
+            f"--- Child's Information ---\n"
+            f"{child_info_text}\n"
+        )
+
+        if address_info_text:
+            copied_text += (
+                f"--- Address & Contact Information ---\n"
+                f"{address_info_text}"
+            )
+
+        # Clear the clipboard and append the formatted text
         self.root.clipboard_clear()
-        self.root.clipboard_append(text)
+        self.root.clipboard_append(copied_text)
         messagebox.showinfo("Info", "Profile info copied to clipboard.")
+
 
 if __name__ == "__main__":
     root = tk.Tk()
