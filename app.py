@@ -174,9 +174,6 @@ class App:
             '''Reset the scroll region to encompass the inner frame'''
             self.treeview.configure(scrollregion=self.canvas.bbox("all"))
 
-        # Bind onFrameConfigure to the treeview to allow updates to scrollbar when scrolling.
-        self.treeview.bind("<Configure>", self.onFrameConfigure)
-
         # Mainloop to check for closing of the window.
         combined_names_window.mainloop()
 
