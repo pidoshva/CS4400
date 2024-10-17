@@ -26,13 +26,14 @@ class App:
         Args:
             root (Tk): The main root window for tkinter.
         """
-        self.root = root
-        self.root.title("Excel Combiner")
+        self.__root = root
+        self.__root.title("Excel Combiner")
 
         # Initialize variables
-        self.invoker = Invoker()  # Create an Invoker to manage commands
-        self.data_frames = []  # Store the two data frames to be combined
-        self.combined_data = None  # Store the combined data
+        
+        self.__data_frames = []
+        self.__combined_data = None
+
 
         logging.info("Application initialized.")
         
@@ -44,11 +45,11 @@ class App:
         Create the UI elements including buttons to read Excel files, combine data, and display profiles.
         """
         # Set the initial size of the root window
-        self.root.geometry("500x300")  # Set the window size to 500x300
-        self.root.minsize(500, 300)  # Ensure the window does not resize smaller than this
+        self.__root.geometry("500x300")  # Set the window size to 500x300
+        self.__root.minsize(500, 300)  # Ensure the window does not resize smaller than this
 
         # Frame to hold the buttons and center them
-        button_frame = tk.Frame(self.root, padx=20, pady=20)
+        button_frame = tk.Frame(self.__root, padx=20, pady=20)
         button_frame.pack(expand=True)  # Add padding to make the UI more spacious
 
         # Buttons for reading two Excel files
@@ -70,10 +71,9 @@ class App:
         Read an Excel file and append its data to the list of data frames.
         """
         command = ReadExcelCommand(self)
-        self.invoker.add_command(command)
         data_frame = command.execute()
         if data_frame is not None:
-            self.data_frames.append(data_frame)
+            self.__data_frames.append(data_frame)
             logging.info(f"Data from {command.filepath} successfully read and added to data frames.")
         else:
             logging.warning("No data frame returned from the file read.")
@@ -83,15 +83,14 @@ class App:
         Combine the two read Excel files and display the combined names.
         This is done using the CombineDataCommand which merges the two data frames.
         """
-        if len(self.data_frames) >= 2:
+        if len(self.__data_frames) >= 2:
             logging.info("Attempting to combine data from two Excel files.")
-            command = CombineDataCommand(self, self.data_frames)
-            self.invoker.add_command(command)
+            command = CombineDataCommand(self, self.__data_frames)
             combined_data = command.execute()
 
             if combined_data is not None:
                 # Store combined data in app
-                self.combined_data = combined_data
+                self.__combined_data = combined_data
                 # Display the combined names in the UI window
                 self.display_combined_names()
                 logging.info("Data combined and displayed successfully.")
@@ -105,7 +104,7 @@ class App:
         Display a new window with the list of combined names (Mother ID, Child Name, DOB) 
         using a Treeview for better data organization and readability.
         """
-        combined_names_window = tk.Toplevel(self.root)
+        combined_names_window = tk.Toplevel(self.__root)
         combined_names_window.title("Combined Data")
 
         """
@@ -116,8 +115,8 @@ class App:
         def on_closing():
             if tk.messagebox.askokcancel("Quit", "Do you want to exit this view?\nFiles must be uploaded to view the data again."):
                 combined_names_window.destroy()
-                self.data_frames.clear()
-                print(self.data_frames)
+                self.__data_frames.clear()
+                print(self.__data_frames)
 
         combined_names_window.protocol("WM_DELETE_WINDOW", on_closing)
 
@@ -189,7 +188,7 @@ class App:
         search_term = self.search_var.get().lower()
 
         # Populate the treeview with matching data
-        for index, row in self.combined_data.iterrows():
+        for index, row in self.__combined_data.iterrows():
             child_name = f"{row['Child_First_Name']} {row['Child_Last_Name']}"
             display_text = f"{row['Mother_ID']} {child_name} (DOB: {row['Child_Date_of_Birth']})"
 
@@ -232,11 +231,11 @@ class App:
 
         # Query the child's profile from the combined data
         try:
-            child_data = self.combined_data.loc[
-                (self.combined_data['Mother_ID'].astype(str) == str(mother_id)) &
-                (self.combined_data['Child_First_Name'].str.lower() == child_first_name.lower()) &
-                (self.combined_data['Child_Last_Name'].str.lower() == child_last_name.lower()) &
-                (self.combined_data['Child_Date_of_Birth'] == child_dob)
+            child_data = self.__combined_data.loc[
+                (self.__combined_data['Mother_ID'].astype(str) == str(mother_id)) &
+                (self.__combined_data['Child_First_Name'].str.lower() == child_first_name.lower()) &
+                (self.__combined_data['Child_Last_Name'].str.lower() == child_last_name.lower()) &
+                (self.__combined_data['Child_Date_of_Birth'] == child_dob)
             ]
 
             if child_data.empty:
@@ -248,7 +247,7 @@ class App:
             child_data = child_data.iloc[0]
 
             # Show profile window
-            profile_window = tk.Toplevel(self.root)
+            profile_window = tk.Toplevel(self.__root)
             profile_window.title(f"Profile of {child_first_name} {child_last_name}")
 
             # Create a frame for the profile layout
@@ -335,8 +334,8 @@ class App:
             logging.info(f"Address Info:\n{address_info_text}")
 
         # Clear the clipboard and append the formatted text
-        self.root.clipboard_clear()
-        self.root.clipboard_append(copied_text)
+        self.__root.clipboard_clear()
+        self.__root.clipboard_append(copied_text)
         messagebox.showinfo("Info", "Profile info copied to clipboard.")
         logging.info("Profile info successfully copied to clipboard.")
 
