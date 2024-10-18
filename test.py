@@ -1,6 +1,7 @@
 import unittest
 import pandas as pd
 import logging
+import os
 from invoker import CombineDataCommand
 
 # Setup logging for test outputs
@@ -41,8 +42,9 @@ class TestCombineDataCommand(unittest.TestCase):
 
     def test_combine_data(self):
         print("\n***Test #1: Functionality of CombineDataCommand***\n")
+        
         # Simulate the app object and data frames list to avoid GUI and isolate CombineDataCommand
-        class MockApp: #By mocking App like this, we isolate the logic of the command and make sure we test the exact behavior we care about: how well the command combines data.
+        class MockApp: 
             def __init__(self):
                 self.combined_data = None
         
@@ -85,6 +87,39 @@ class TestCombineDataCommand(unittest.TestCase):
 
         print("Step 6: Confirming that the test passed!")
         logging.info("Test passed: CombineDataCommand executed successfully and data was combined correctly.")
+    
+    def test_excel_file_generation(self):
+        print("\n***Test #2: Excel File Generation After Data Combination***\n")
+        
+        # Simulate the app object
+        class MockApp: 
+            def __init__(self):
+                self.combined_data = None
+        
+        app = MockApp()
+
+        # Instantiate the CombineDataCommand with mock data
+        command = CombineDataCommand(app, [self.mock_db_data, self.mock_medicaid_data])
+        
+        print("Step 1: Executing CombineDataCommand...")
+        
+        # Execute the command to combine data
+        command.execute()
+
+        print("Step 2: Checking if the Excel file is generated...")
+        
+        # Check if the combined data Excel file was created
+        output_file = 'combined_matched_data.xlsx'
+        self.assertTrue(os.path.exists(output_file), f"File '{output_file}' should exist after combination. ❌")
+        print(f"File '{output_file}' was successfully generated. ✅")
+
+        print("Step 3: Confirming file generation test passed!")
+        logging.info("Test passed: Excel file generated correctly.")
+
+        # Cleanup: Remove the generated Excel file
+        if os.path.exists(output_file):
+            os.remove(output_file)
+            print(f"File '{output_file}' has been cleaned up after the test. ✅")
 
 # Running the test
 if __name__ == "__main__":
