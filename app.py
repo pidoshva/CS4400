@@ -26,19 +26,17 @@ class App:
         Args:
             root (Tk): The main root window for tkinter.
         """
-        self.__root = root
-        self.__root.title("Excel Combiner")
+        if root is not None:  # Only setup UI if root is provided
+            self.__root = root
+            self.__root.title("Excel Combiner")
+            # Create UI elements
+            self.create_widgets()
+        else:
+            self.__root = None
 
-        # Initialize variables
-        
+        self._combined_data = None
         self.__data_frames = []
-        self.__combined_data = None
-
-
-        logging.info("Application initialized.")
         
-        # Create UI elements
-        self.create_widgets()
 
     def create_widgets(self):
         """
