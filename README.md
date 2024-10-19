@@ -1,82 +1,113 @@
-## Features
+# Excel Data Combiner Application
 
-- **Read Two Excel Files**: The application reads two Excel files, typically containing different types of data, and merges them based on the "Mother ID", "Mother Name", and "Child's Date of Birth".
-- **Combine Data**: Combines the two datasets into a single dataset for further inspection.
-- **Search & Filter**: Users can search and filter combined data for quick access.
-- **Display Profiles**: Double-clicking on a name displays detailed profile information for the selected entry.
-- **Copy to Clipboard**: The profile information can be copied to the clipboard for easy sharing or documentation.
+This application merges data from two Excel files, typically hospital and Medicaid datasets, into one dataset for further inspection. It allows users to search, filter, view, and copy detailed profiles based on the merged data.
+
+## Features
+- **Read Two Excel Files:** Users can select two Excel files (hospital and Medicaid datasets) and merge them based on the Mother’s First Name, Last Name, and Child’s Date of Birth.
+- **Combine Data:** Combines the datasets into a single file for easy inspection.
+- **Search & Filter:** Quickly search and filter combined data by name, ID, or Date of Birth.
+- **Display Profiles:** Double-clicking on a name opens a detailed profile for the selected entry, showing information about the mother, child, and contact details.
+- **Copy to Clipboard:** Users can copy profile information for easy documentation and sharing.
+- **Excel Export:** Saves the combined dataset to an Excel file (combined_matched_data.xlsx).
 
 ## Prerequisites
 
-To run this application, you need:
+Ensure the following requirements are met to run the application:
 
-- Python 3.x installed.
-- The following Python libraries:
-  - `pandas`
-  - `tkinter`
-  - `openpyxl` (for handling `.xlsx` files)
-  - `logging`
+- **Python 3.x** installed.
+- Required Python Libraries:
+- - `pandas`
+- - `tkinter`
+- - `openpyxl`
+- - `logging`
 
 You can install the required dependencies using pip:
-
-```bash
+``` bash
 pip install pandas openpyxl
 ```
-## Installation  
-1. Clone or download this repository.  
-2. Ensure the required Python packages are installed (see above).
-3.  Place your two Excel files (hospital and Medicaid datasets) in a location where they can be accessed.  
 
-## Usage  
-1. Run the `app.py` script:  
+## Installation
+
+1. Clone or download this repository.
+2. Ensure the required Python packages are installed (see above).
+3. Place your two Excel files (hospital and Medicaid datasets) in an accessible location.
+
+## Usage
+
+1. Run the `app.py` script:
+
 ``` bash
 python app.py
 ```
 
-2. The graphical user interface (GUI) will open, and you will see buttons to:  
+2. The GUI will open with buttons to:
+- **Read Excel File 1:** Load the first Excel dataset (e.g., hospital data).
+- **Read Excel File 2:** Load the second Excel dataset (e.g., Medicaid data).
+- **Combine Data:**  Merge the two datasets based on "Mother’s Name" and "Child’s Date of Birth."
 
-- Read Excel File 1: Use this to load the hospital data.
-- Read Excel File 2: Use this to load the Medicaid data.
-- Combine Data: After loading both files, click this button to merge the datasets.  
+3. After merging, a new window will display the combined records, showing "Mother ID," "Child Name," and "Child DOB."
 
-3. After merging, a new window will display a list of combined child records, showing the Mother ID, Child Name, and DOB.
+4. **View Child Profile:** Double-click on an entry to view a detailed profile of the selected entry, including information about the mother, child, and contact details.
 
-4. View Child Profile: Double-click on any entry in the list to open a new window displaying the full profile of the child, including all data from both the hospital and Medicaid records.
-
-5. The merged data is saved as `combined_matched_data.xlsx`, and unmatched data will be logged in the console.
+5. **Copy Profile Info:** Copy profile details to the clipboard for easy sharing.
 
 ## Application Workflow
-- **Read Excel Files**: Click the buttons `Read Excel File 1` and `Read Excel File 2` to load two Excel files for merging.
-- **Combine Data**: Once both Excel files are loaded, click "Combine Data" to merge them based on the common fields.
-- **Search & Filte**r: After combining, you can search for specific entries using the search bar in the new window.
-- **View Profiles**: Double-clicking an entry from the results list will show a detailed profile view of the individual entry.
-- **Copy Profile Info**: You can copy the profile information to the clipboard by clicking the "Copy Profile Info" button.
+
+- Read Excel Files: Click the "Read Excel File" buttons to load two Excel files (hospital and Medicaid datasets).
+- Combine Data: After loading both files, click "Combine Data" to merge the files based on "Mother’s First Name," "Mother’s Last Name," and "Child’s Date of Birth."
+- Search & Filter: Use the search bar to filter the displayed names.
+- View Profiles: Double-click an entry to view a detailed profile.
+- Copy Profile Info: Copy profile details to the clipboard by clicking the "Copy Profile Info" button.
 
 ## Application Layout
 ### Main Window
-The main window contains three primary buttons:
 
-- **Read Excel File 1**: Opens a file dialog to select the first Excel file.
-- **Read Excel File 2**: Opens a file dialog to select the second Excel file.
-- **Combine Data**: Combines the data from both files based on matching fields.
+- **Read Excel File 1:** Opens a file dialog for selecting the first Excel file.
+- **Read Excel File 2:** Opens a file dialog for selecting the second Excel file.
+- **Combine Data:** Merges the two datasets.
+
 ### Combined Data Window
-Once the data is combined, a new window appears displaying the merged entries. It includes:
 
-- **Search Bar**: Allows you to filter through the entries by name, ID, or date of birth.
-- **Results List**: Shows the "Mother ID", "Child Name", and "Child DOB" in a structured format.
-- **Double-click Feature**: Double-clicking on a result opens a detailed profile of that entry.
+- **Search Bar:** Filter entries by Mother ID, Child Name, or Child DOB.
+- **Results List:** Displays "Mother ID," "Child Name," and "Child DOB."
+- **Double-click Feature:** Opens a detailed profile for the selected entry.
+
 ### Profile View
-When an entry is double-clicked, a profile window displays more detailed information, such as:
 
-- **Mother's Information**: Mother ID, first name, and last name.
-- **Child's Information**: Child's first name, last name, and date of birth.
-- **Address and Contact**: Address, phone number, and mobile number (if available).
-- **Copy Profile Info**: A button to copy all profile details to the clipboard in a well-organized format.
+Displays detailed information including:
 
-## Logging  
-The application logs key events such as file reading, data combination, search activities, and errors to the console. This makes it easier to debug or track the application's activity.
+- **Mother’s Information:** Mother ID, First Name, Last Name.
+- **Child’s Information:** First Name, Last Name, Date of Birth.
+- **Contact Information:** Street Address, City, State, ZIP, Phone, and Mobile Number.
+- **Copy Profile Info:** Copies the profile details to the clipboard.
 
-**INFO**: Information messages for successful operations.  
-**ERROR**: Error messages for any issues that occur.
-Logs are displayed in the console output and help you track the application's behavior.
+## Logging
+The application logs key events such as file reading, data combination, and errors. These logs are displayed in the console.
 
+- **INFO:** Successful operations.
+- **WARNING:** Operations that did not complete as expected (e.g., no file selected).
+- **ERROR:** Issues encountered (e.g., data combination errors).
+
+## Excel File Output
+The combined dataset is saved as `combined_matched_data.xlsx` in the current working directory after successfully combining the two datasets.
+
+## Unit Testing
+The application includes a set of unit tests using the `unittest` or `pytest` module to ensure the functionality of critical features:
+
+- **Test for Reading Excel Files:** Simulates reading an Excel file and verifies if the data is correctly loaded and appended.
+- **Test for Data Combination:** Ensures that the two datasets are merged correctly based on "Mother’s Name" and "Child’s Date of Birth."
+- **Test for Excel File Generation:** Verifies that the combined data is saved to an Excel file named `combined_matched_data.xlsx`.  
+
+You can run the tests using `pytest` with rich formatting for enhanced readability:
+
+``` bash
+pytest --rich --tb=short -v test.py
+```
+
+## Changes
+- **New GUI Components:** Updated the GUI with a modern layout using ttk.Treeview for better data visualization.
+- **New Copy Functionality:** Added functionality to copy profile information to the clipboard.
+- **Unit Test Integration:** Introduced unit tests using unittest for testing key functions like reading Excel files, data combination, and Excel file generation.
+- **Enhanced Logging:** Added detailed logging for tracking successful operations, warnings, and errors, visible in the console.
+- **Improved Data Normalization:** Enhanced the data merging process by normalizing names and standardizing date formats.
+- **Error Handling:** Implemented better error handling for file operations and merging errors.
