@@ -53,13 +53,14 @@ python app.py
 
 ## Application Workflow
 
-- Read Excel Files: Click the "Read Excel File" buttons to load two Excel files (hospital and Medicaid datasets).
-- Combine Data: After loading both files, click "Combine Data" to merge the files based on "Mother’s First Name," "Mother’s Last Name," and "Child’s Date of Birth."
-- Search & Filter: Use the search bar to filter the displayed names.
-- View Profiles: Double-click an entry to view a detailed profile.
-- Copy Profile Info: Copy profile details to the clipboard by clicking the "Copy Profile Info" button.
+- **Read Excel Files:** Click the "Read Excel File" buttons to load two Excel files (hospital and Medicaid datasets).
+- **Combine Data:** After loading both files, click "Combine Data" to merge the files based on "Mother’s First Name," "Mother’s Last Name," and "Child’s Date of Birth."
+- **Search & Filter:** Use the search bar to filter the displayed names.
+- **View Profiles:** Double-click an entry to view a detailed profile.
+- **Copy Profile Info:** Copy profile details to the clipboard by clicking the "Copy Profile Info" button.
 
-## Application Layout
+## Application Layout  
+
 ### Main Window
 
 - **Read Excel File 1:** Opens a file dialog for selecting the first Excel file.
