@@ -3,12 +3,12 @@
 This application merges data from two Excel files, typically hospital and Medicaid datasets, into one dataset for further inspection. It allows users to search, filter, view, and copy detailed profiles based on the merged data.
 
 ## Features
-- Read Two Excel Files: Users can select two Excel files (hospital and Medicaid datasets) and merge them based on the Mother’s First Name, Last Name, and Child’s Date of Birth.
-- Combine Data: Combines the datasets into a single file for easy inspection.
-- Search & Filter: Quickly search and filter combined data by name, ID, or Date of Birth.
-- Display Profiles: Double-clicking on a name opens a detailed profile for the selected entry, showing information about the mother, child, and contact details.
-- Copy to Clipboard: Users can copy profile information for easy documentation and sharing.
-- Excel Export: Saves the combined dataset to an Excel file (combined_matched_data.xlsx).
+- **Read Two Excel Files:** Users can select two Excel files (hospital and Medicaid datasets) and merge them based on the Mother’s First Name, Last Name, and Child’s Date of Birth.
+- **Combine Data:** Combines the datasets into a single file for easy inspection.
+- **Search & Filter:** Quickly search and filter combined data by name, ID, or Date of Birth.
+- **Display Profiles:** Double-clicking on a name opens a detailed profile for the selected entry, showing information about the mother, child, and contact details.
+- **Copy to Clipboard:** Users can copy profile information for easy documentation and sharing.
+- **Excel Export:** Saves the combined dataset to an Excel file (combined_matched_data.xlsx).
 
 ## Prerequisites
 
