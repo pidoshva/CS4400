@@ -1,5 +1,7 @@
-# -*- coding: utf-8 -*-
+"""
+Unit Testing for App and Invoker.
 
+"""
 import unittest
 import pandas as pd
 import logging
@@ -55,7 +57,7 @@ class TestApp(unittest.TestCase):
         print("Step 3: 🔄 Verifying that ReadExcelCommand was called once...")
         mock_read_excel_command.assert_called_once()
         print("✅ ReadExcelCommand was called once.\n")
-
+    
 
 class TestCombineDataCommand(unittest.TestCase):
     """
