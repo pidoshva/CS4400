@@ -4,6 +4,11 @@ import pandas as pd
 import logging
 from invoker import ReadExcelCommand, CombineDataCommand, Invoker
 import tkinter.ttk as ttk  # for treeview
+import os
+import subprocess
+import tempfile
+from reportlab.lib.pagesizes import letter
+from reportlab.pdfgen import canvas
 
 # Setup logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -12,19 +17,10 @@ class App:
     """
     The main application class for combining two Excel files.
     It handles user interactions for reading files, combining data, and displaying profiles.
-    
-    Attributes:
-        root (Tk): The main root window for tkinter.
-        invoker (Invoker): The Invoker object that stores and executes commands.
-        data_frames (list): List to store the data frames from two Excel files.
-        combined_data (DataFrame): The combined data after merging the two data frames.
     """
     def __init__(self, root):
         """
         Initialize the main application, setup the UI, and initialize variables.
-
-        Args:
-            root (Tk): The main root window for tkinter.
         """
         if root is not None:  # Only setup UI if root is provided
             self.__root = root
@@ -36,7 +32,6 @@ class App:
 
         self._combined_data = None
         self.__data_frames = []
-        
 
     def create_widgets(self):
         """
@@ -63,7 +58,6 @@ class App:
 
         logging.info("UI widgets created.")
 
-
     def read_excel_file(self):
         """
         Read an Excel file and append its data to the list of data frames.
@@ -79,7 +73,6 @@ class App:
     def combine_data(self):
         """
         Combine the two read Excel files and display the combined names.
-        This is done using the CombineDataCommand which merges the two data frames.
         """
         if len(self.__data_frames) >= 2:
             logging.info("Attempting to combine data from two Excel files.")
@@ -92,7 +85,6 @@ class App:
                 # Display the combined names in the UI window
                 self.display_combined_names()
                 logging.info("Data combined and displayed successfully.")
-                #empty out the existing data frames
         else:
             messagebox.showwarning("Warning", "Please read two Excel files first.")
             logging.warning("Attempted to combine data with less than two files.")
@@ -106,9 +98,7 @@ class App:
         combined_names_window.title("Combined Data")
 
         """
-        Inner function that describes the event of closing the cobined_names_window
-        On attempting to close a message will prompt the user to confirm.
-        On confirmation the sub-window will exit and all datagrams will be wiped.
+        Inner function that describes the event of closing the combined_names_window
         """
         def on_closing():
             if tk.messagebox.askokcancel("Quit", "Do you want to exit this view?\nFiles must be uploaded to view the data again."):
@@ -142,7 +132,7 @@ class App:
         columns = ("Mother ID", "Child Name", "Child DOB")
         self.treeview = ttk.Treeview(combined_names_window, columns=columns, show='headings')
 
-        # Create a scrollbar widgit
+        # Create a scrollbar widget
         tree_scroll = tk.Scrollbar(self.treeview, command=self.treeview.yview)
         tree_scroll.pack(side="right", fill="y")
         self.treeview.configure(yscrollcommand=tree_scroll.set)
@@ -165,13 +155,10 @@ class App:
         # Bind double-click event to open child profile
         self.treeview.bind('<Double-1>', lambda event: self.show_child_profile(event))
 
+        # Button to display combined data in Excel
+        display_excel_button = tk.Button(combined_names_window, text="Display in Excel", command=self.display_in_excel)
+        display_excel_button.pack(pady=10)
 
-        """Binding function for the scrollbar component"""
-        def onFrameConfigure(self, event):
-            '''Reset the scroll region to encompass the inner frame'''
-            self.treeview.configure(scrollregion=self.canvas.bbox("all"))
-
-        # Mainloop to check for closing of the window.
         combined_names_window.mainloop()
 
     def update_combined_names(self):
@@ -206,9 +193,6 @@ class App:
     def show_child_profile(self, event):
         """
         Show child profile when a name is double-clicked from the Treeview.
-
-        Args:
-            event: The event that triggers the double-click.
         """
         selected_item = self.treeview.selection()
         if not selected_item:
@@ -293,24 +277,20 @@ class App:
             copy_button = tk.Button(profile_frame, text="Copy Profile Info", command=lambda: self.copy_to_clipboard(mother_info_text, child_info_text, address_info_text))
             copy_button.pack(pady=(10, 5))
 
+            # Button to print the profile information
+            print_button = tk.Button(profile_frame, text="Print Profile", command=lambda: self.print_profile_to_pdf(mother_info_text, child_info_text, address_info_text))
+            print_button.pack(pady=(10, 5))
+
             logging.info(f"Profile for {child_first_name} {child_last_name} displayed successfully.")
 
         except Exception as e:
             messagebox.showerror("Error", f"Error loading profile: {e}")
             logging.error(f"Error loading profile for {child_first_name} {child_last_name}: {e}")
 
-
-
     def copy_to_clipboard(self, mother_info_text, child_info_text, address_info_text=None):
         """
         Copies the given text to the clipboard, formatted for better readability.
-
-        Args:
-            mother_info_text (str): Mother's information to be copied.
-            child_info_text (str): Child's information to be copied.
-            address_info_text (str, optional): Address and contact information to be copied.
         """
-        # Organize the sections of the profile for copying
         copied_text = (
             f"--- Mother's Information ---\n"
             f"{mother_info_text}\n"
@@ -324,18 +304,53 @@ class App:
                 f"{address_info_text}"
             )
 
-        # Log the content being copied
-        logging.info("Copying the following profile information to clipboard:")
-        logging.info(f"Mother Info:\n{mother_info_text}")
-        logging.info(f"Child Info:\n{child_info_text}")
-        if address_info_text:
-            logging.info(f"Address Info:\n{address_info_text}")
-
-        # Clear the clipboard and append the formatted text
         self.__root.clipboard_clear()
         self.__root.clipboard_append(copied_text)
         messagebox.showinfo("Info", "Profile info copied to clipboard.")
         logging.info("Profile info successfully copied to clipboard.")
+
+    def print_profile_to_pdf(self, mother_info_text, child_info_text, address_info_text=None):
+        """
+        Function to print the profile to a PDF file.
+        """
+        try:
+            # Create a temporary file for the PDF
+            pdf_file = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
+            c = canvas.Canvas(pdf_file.name, pagesize=letter)
+            c.drawString(100, 750, "--- Mother's Information ---")
+            c.drawString(100, 730, mother_info_text.replace('\n', ', '))
+
+            c.drawString(100, 700, "--- Child's Information ---")
+            c.drawString(100, 680, child_info_text.replace('\n', ', '))
+
+            if address_info_text:
+                c.drawString(100, 650, "--- Address & Contact Information ---")
+                c.drawString(100, 630, address_info_text.replace('\n', ', '))
+
+            c.save()
+
+            # Open the generated PDF
+            os.system(f"open {pdf_file.name}")
+            logging.info(f"Profile printed to PDF: {pdf_file.name}")
+
+        except Exception as e:
+            messagebox.showerror("Error", f"Error printing profile: {e}")
+            logging.error(f"Error printing profile to PDF: {e}")
+
+    def display_in_excel(self):
+        """
+        Open the combined data Excel file in the default Excel application.
+        """
+        try:
+            if os.path.exists('combined_matched_data.xlsx'):
+                os.system(f"open combined_matched_data.xlsx")
+                logging.info("Opened combined data in Excel.")
+            else:
+                messagebox.showerror("Error", "The combined data file does not exist.")
+                logging.error("The combined data file does not exist.")
+        except Exception as e:
+            messagebox.showerror("Error", f"Error opening Excel file: {e}")
+            logging.error(f"Error opening Excel file: {e}")
 
 if __name__ == "__main__":
     root = tk.Tk()
