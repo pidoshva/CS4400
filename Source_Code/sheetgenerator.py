@@ -14,7 +14,7 @@ def generate_child_dob():
     return birth_date
 
 # Function to generate names, birthdates, and use them for both Database and Medicaid list
-def generate_shared_data(num_entries=200):
+def generate_shared_data(num_entries=1000):
     shared_data = []
     for _ in range(num_entries):
         child_last_name = fake.last_name()
@@ -101,15 +101,15 @@ def verify_names(database_file, medicaid_data_file):
 # Main function to generate the files
 def generate_excel_files():
     # Generate shared names and DOBs
-    shared_data = generate_shared_data(200)
+    shared_data = generate_shared_data(1000)
 
     # Generate data for both sheets using the shared data
     database_data_df = generate_database_data(shared_data)
     medicaid_data_df = generate_medicaid_data(shared_data)
 
     # Save the data to Excel files
-    database_filename = "database_data_200.xlsx"
-    medicaid_data_filename = "medicaid_data_200.xlsx"
+    database_filename = "database_data.xlsx"
+    medicaid_data_filename = "medicaid_data.xlsx"
     
     database_data_df.to_excel(database_filename, index=False)
     medicaid_data_df.to_excel(medicaid_data_filename, index=False)
