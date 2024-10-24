@@ -277,9 +277,9 @@ class App:
             copy_button = tk.Button(profile_frame, text="Copy Profile Info", command=lambda: self.copy_to_clipboard(mother_info_text, child_info_text, address_info_text))
             copy_button.pack(pady=(10, 5))
 
-            # Button to print the profile information
-            print_button = tk.Button(profile_frame, text="Print Profile", command=lambda: self.print_profile_to_pdf(mother_info_text, child_info_text, address_info_text))
-            print_button.pack(pady=(10, 5))
+            # Button to export the profile information to PDF
+            export_button = tk.Button(profile_frame, text="Export to PDF", command=lambda: self.export_profile_to_pdf(mother_info_text, child_info_text, address_info_text))
+            export_button.pack(pady=(10, 5))
 
             logging.info(f"Profile for {child_first_name} {child_last_name} displayed successfully.")
 
@@ -309,33 +309,39 @@ class App:
         messagebox.showinfo("Info", "Profile info copied to clipboard.")
         logging.info("Profile info successfully copied to clipboard.")
 
-    def print_profile_to_pdf(self, mother_info_text, child_info_text, address_info_text=None):
+    def export_profile_to_pdf(self, mother_info_text, child_info_text, address_info_text=None):
         """
-        Function to print the profile to a PDF file.
+        Function to export the profile to a PDF file.
         """
         try:
             # Create a temporary file for the PDF
             pdf_file = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
             c = canvas.Canvas(pdf_file.name, pagesize=letter)
-            c.drawString(100, 750, "--- Mother's Information ---")
-            c.drawString(100, 730, mother_info_text.replace('\n', ', '))
 
-            c.drawString(100, 700, "--- Child's Information ---")
-            c.drawString(100, 680, child_info_text.replace('\n', ', '))
+            # Formatting the text with better spacing
+            text = c.beginText(100, 750)
+            text.setFont("Helvetica", 12)
+            text.textLine("--- Mother's Information ---")
+            text.textLines(mother_info_text)
+
+            text.textLine("\n--- Child's Information ---")
+            text.textLines(child_info_text)
 
             if address_info_text:
-                c.drawString(100, 650, "--- Address & Contact Information ---")
-                c.drawString(100, 630, address_info_text.replace('\n', ', '))
+                text.textLine("\n--- Address & Contact Information ---")
+                text.textLines(address_info_text)
 
+            c.drawText(text)
+            c.showPage()
             c.save()
 
             # Open the generated PDF
             os.system(f"open {pdf_file.name}")
-            logging.info(f"Profile printed to PDF: {pdf_file.name}")
+            logging.info(f"Profile exported to PDF: {pdf_file.name}")
 
         except Exception as e:
-            messagebox.showerror("Error", f"Error printing profile: {e}")
-            logging.error(f"Error printing profile to PDF: {e}")
+            messagebox.showerror("Error", f"Error exporting profile: {e}")
+            logging.error(f"Error exporting profile to PDF: {e}")
 
     def display_in_excel(self):
         """
