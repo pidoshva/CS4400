@@ -9,6 +9,9 @@ import subprocess
 import tempfile
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
+from reportlab.lib.pagesizes import letter
+from reportlab.lib import colors
+from reportlab.lib.units import inch
 
 # Setup logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -311,28 +314,50 @@ class App:
 
     def export_profile_to_pdf(self, mother_info_text, child_info_text, address_info_text=None):
         """
-        Function to export the profile to a PDF file.
+        Function to export the profile to a structured PDF document.
         """
         try:
             # Create a temporary file for the PDF
             pdf_file = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
             c = canvas.Canvas(pdf_file.name, pagesize=letter)
+            
+            # PDF Title and document layout settings
+            c.setFont("Helvetica-Bold", 14)
+            c.drawString(1 * inch, 10.5 * inch, "Profile Information")
+            c.line(1 * inch, 10.45 * inch, 7.5 * inch, 10.45 * inch)
+            c.setFont("Helvetica", 10)
+            y = 10.2 * inch  # Start position
 
-            # Formatting the text with better spacing
-            text = c.beginText(100, 750)
-            text.setFont("Helvetica", 12)
-            text.textLine("--- Mother's Information ---")
-            text.textLines(mother_info_text)
+            # Function to draw a section header
+            def draw_section_header(title, ypos):
+                c.setFont("Helvetica-Bold", 12)
+                c.setFillColor(colors.darkblue)
+                c.drawString(1 * inch, ypos, title)
+                c.setFillColor(colors.black)
+                c.line(1 * inch, ypos - 2, 7.5 * inch, ypos - 2)
+                return ypos - 14
 
-            text.textLine("\n--- Child's Information ---")
-            text.textLines(child_info_text)
+            # Draw "Mother's Information" section
+            y = draw_section_header("Mother's Information", y)
+            c.setFont("Helvetica", 10)
+            for line in mother_info_text.strip().split('\n'):
+                c.drawString(1.2 * inch, y, line)
+                y -= 12
 
+            # Draw "Child's Information" section
+            y = draw_section_header("Child's Information", y - 10)
+            for line in child_info_text.strip().split('\n'):
+                c.drawString(1.2 * inch, y, line)
+                y -= 12
+
+            # Draw "Address & Contact Information" section if available
             if address_info_text:
-                text.textLine("\n--- Address & Contact Information ---")
-                text.textLines(address_info_text)
+                y = draw_section_header("Address & Contact Information", y - 10)
+                for line in address_info_text.strip().split('\n'):
+                    c.drawString(1.2 * inch, y, line)
+                    y -= 12
 
-            c.drawText(text)
-            c.showPage()
+            # Save and close PDF
             c.save()
 
             # Open the generated PDF
