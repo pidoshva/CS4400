@@ -52,6 +52,7 @@ class ReadExcelCommand(Command):
             messagebox.showerror("Error", f"Error reading file '{self.filepath}': {e}")
             return None
 
+
 class CombineDataCommand(Command):
     """
     Command to combine two data sets (Excel files) by Mother's Name and Child's Date of Birth.
@@ -101,17 +102,11 @@ class CombineDataCommand(Command):
             logging.info("Matched data combined successfully.")
 
             # Identify unmatched data
-            unmatched_database = database_data[~database_data.apply(
-                lambda row: ((combined_data['Mother_First_Name'] == row['Mother_First_Name']) &
-                             (combined_data['Mother_Last_Name'] == row['Mother_Last_Name']) &
-                             (combined_data['Child_Date_of_Birth'] == row['Child_Date_of_Birth'])).any(), axis=1)]
+            unmatched_database = database_data[~database_data.set_index(['Mother_First_Name', 'Mother_Last_Name', 'Child_Date_of_Birth']).index.isin(combined_data.set_index(['Mother_First_Name', 'Mother_Last_Name', 'Child_Date_of_Birth']).index)].copy()
             unmatched_database['Source'] = 'Database'
 
-            unmatched_medicaid = medicaid_data[~medicaid_data.apply(
-                lambda row: ((combined_data['Mother_First_Name'] == row['Mother_First_Name']) &
-                             (combined_data['Mother_Last_Name'] == row['Mother_Last_Name']) &
-                             (combined_data['Child_Date_of_Birth'] == row['Child_Date_of_Birth'])).any(), axis=1)]
-            unmatched_medicaid['Source'] = 'Medicaid'
+            unmatched_medicaid = medicaid_data[~medicaid_data.set_index(['Mother_First_Name', 'Mother_Last_Name', 'Child_Date_of_Birth']).index.isin(combined_data.set_index(['Mother_First_Name', 'Mother_Last_Name', 'Child_Date_of_Birth']).index)].copy()
+            unmatched_medicaid.loc[:, 'Source'] = 'Medicaid'  # Using .loc here to avoid SettingWithCopyWarning (spent hours on this)
 
             # Standardize unmatched data columns to align with combined_data
             unmatched_database = unmatched_database.reindex(columns=combined_data.columns.tolist() + ['Source'], fill_value='')
@@ -145,7 +140,6 @@ class CombineDataCommand(Command):
             logging.error(f"Error combining data: {e}")
             messagebox.showerror("Error", f"Error combining data: {e}")
             return None
-
 
 
 class Invoker:
