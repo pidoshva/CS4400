@@ -78,10 +78,25 @@ class App:
 
         def on_closing():
             if tk.messagebox.askokcancel("Quit", "Do you want to exit this view?\nFiles must be uploaded to view the data again."):
-                combined_names_window.destroy()
+                # Delete the matched data file if it exists
+                matched_file_path = 'combined_matched_data.xlsx'
+                if os.path.exists(matched_file_path):
+                    os.remove(matched_file_path)
+                    logging.info(f"Deleted {matched_file_path}")
+
+                # Delete the unmatched data file if it exists
+                unmatched_file_path = 'unmatched_data.xlsx'
+                if os.path.exists(unmatched_file_path):
+                    os.remove(unmatched_file_path)
+                    logging.info(f"Deleted {unmatched_file_path}")
+
+                # Clear data frames and close window
                 self.__data_frames.clear()
+                combined_names_window.destroy()
+                logging.info("Combined data window closed and files deleted.")
 
         combined_names_window.protocol("WM_DELETE_WINDOW", on_closing)
+
 
         combined_names_window.geometry("1000x600")
         combined_names_window.minsize(800, 400)
