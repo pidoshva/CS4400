@@ -12,6 +12,7 @@ from reportlab.pdfgen import canvas
 from reportlab.lib.pagesizes import letter
 from reportlab.lib import colors
 from reportlab.lib.units import inch
+from app_crypto import *
 
 # Setup logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -386,5 +387,6 @@ class App:
 if __name__ == "__main__":
     root = tk.Tk()
     app = App(root)
+    Crypto.generateKey()
     root.mainloop()
 

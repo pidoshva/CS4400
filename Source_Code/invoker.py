@@ -1,6 +1,7 @@
 import pandas as pd
 from tkinter import filedialog, messagebox
 import logging
+from app_crypto import *
 
 # Setup logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
