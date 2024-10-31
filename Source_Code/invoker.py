@@ -102,30 +102,43 @@ class CombineDataCommand(Command):
             logging.info("Matched data combined successfully.")
 
             # Identify unmatched data
-            unmatched_database = database_data[~database_data.set_index(['Mother_First_Name', 'Mother_Last_Name', 'Child_Date_of_Birth']).index.isin(combined_data.set_index(['Mother_First_Name', 'Mother_Last_Name', 'Child_Date_of_Birth']).index)].copy()
+            unmatched_database = database_data[~database_data.apply(
+                lambda row: ((combined_data['Mother_First_Name'] == row['Mother_First_Name']) &
+                            (combined_data['Mother_Last_Name'] == row['Mother_Last_Name']) &
+                            (combined_data['Child_Date_of_Birth'] == row['Child_Date_of_Birth'])).any(), axis=1)]
             unmatched_database['Source'] = 'Database'
 
-            unmatched_medicaid = medicaid_data[~medicaid_data.set_index(['Mother_First_Name', 'Mother_Last_Name', 'Child_Date_of_Birth']).index.isin(combined_data.set_index(['Mother_First_Name', 'Mother_Last_Name', 'Child_Date_of_Birth']).index)].copy()
-            unmatched_medicaid.loc[:, 'Source'] = 'Medicaid'  # Using .loc here to avoid SettingWithCopyWarning (spent hours on this)
+            unmatched_medicaid = medicaid_data[~medicaid_data.apply(
+                lambda row: ((combined_data['Mother_First_Name'] == row['Mother_First_Name']) &
+                            (combined_data['Mother_Last_Name'] == row['Mother_Last_Name']) &
+                            (combined_data['Child_Date_of_Birth'] == row['Child_Date_of_Birth'])).any(), axis=1)]
+            unmatched_medicaid['Source'] = 'Medicaid'
 
-            # Standardize unmatched data columns to align with combined_data
-            unmatched_database = unmatched_database.reindex(columns=combined_data.columns.tolist() + ['Source'], fill_value='')
-            unmatched_medicaid = unmatched_medicaid.reindex(columns=combined_data.columns.tolist() + ['Source'], fill_value='')
+            # Check if there are unmatched rows in either data frame
+            if not unmatched_database.empty or not unmatched_medicaid.empty:
+                # Standardize unmatched data columns to align with combined_data
+                unmatched_database = unmatched_database.reindex(columns=combined_data.columns.tolist() + ['Source'], fill_value='')
+                unmatched_medicaid = unmatched_medicaid.reindex(columns=combined_data.columns.tolist() + ['Source'], fill_value='')
 
-            # Concatenate unmatched records
-            unmatched_data = pd.concat([unmatched_database, unmatched_medicaid], ignore_index=True)
+                # Concatenate unmatched records
+                unmatched_data = pd.concat([unmatched_database, unmatched_medicaid], ignore_index=True)
 
-            # Capitalize all names in both matched and unmatched data
+                # Capitalize all names in unmatched data
+                for col in ['Mother_First_Name', 'Mother_Last_Name', 'Child_First_Name', 'Child_Last_Name']:
+                    if col in unmatched_data.columns:
+                        unmatched_data[col] = unmatched_data[col].str.capitalize()
+
+                # Save the unmatched data to an Excel file
+                unmatched_file_path = 'unmatched_data.xlsx'
+                unmatched_data.to_excel(unmatched_file_path, index=False)
+                logging.info(f"Unmatched data saved to {unmatched_file_path}")
+            else:
+                logging.info("No unmatched data found; skipping unmatched data file creation.")
+
+            # Capitalize all names in matched data
             for col in ['Mother_First_Name', 'Mother_Last_Name', 'Child_First_Name', 'Child_Last_Name']:
                 if col in combined_data.columns:
                     combined_data[col] = combined_data[col].str.capitalize()
-                if col in unmatched_data.columns:
-                    unmatched_data[col] = unmatched_data[col].str.capitalize()
-
-            # Save the unmatched data to an Excel file
-            unmatched_file_path = 'unmatched_data.xlsx'
-            unmatched_data.to_excel(unmatched_file_path, index=False)
-            logging.info(f"Unmatched data saved to {unmatched_file_path}")
 
             # Save the matched data
             matched_file_path = 'combined_matched_data.xlsx'
