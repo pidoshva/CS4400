@@ -150,6 +150,8 @@ class App:
         """
         Display a new window with the unmatched data in a Treeview.
         """
+        logging.info("Opening unmatched data window.")
+
         unmatched_data_window = tk.Toplevel(self.__root)
         unmatched_data_window.title("Unmatched Data")
         unmatched_data_window.geometry("800x400")
@@ -175,6 +177,7 @@ class App:
             # Extract primary column values for the main row
             main_values = [row.get(col, "") for col in primary_columns]
             row_id = treeview.insert("", "end", values=main_values, open=False)
+            logging.info(f"Inserted unmatched row with ID {row_id} and data: {main_values}")
             
             # Prepare additional information as separate rows under the main row
             additional_info_rows = []
@@ -188,45 +191,44 @@ class App:
                 "details": additional_info_rows
             }
 
-        # Function to toggle displaying additional information for the clicked row
         def toggle_expand(event):
-            # Ensure there is a selected item before proceeding
+            """
+            Toggle displaying additional information for the clicked row.
+            """
             selected_items = treeview.selection()
             if not selected_items:
-                return  # Exit if no item is selected
+                logging.warning("No row selected for expansion/collapse.")
+                return
 
             selected_item = selected_items[0]
             row_data = expanded_rows.get(selected_item, {})
             is_expanded = row_data.get("expanded", False)
 
             if not is_expanded:
-                # Add additional information rows for expansion
                 detail_items = []
                 for detail in row_data["details"]:
                     detail_item = treeview.insert(selected_item, "end", values=[detail], tags=("additional",))
                     detail_items.append(detail_item)
                 row_data["expanded"] = True
                 row_data["detail_items"] = detail_items  # Store detail items for future collapse
+                logging.info(f"Expanded row with ID {selected_item} to show details.")
             else:
-                # Collapse by removing detail items
                 for child in row_data.get("detail_items", []):
                     treeview.delete(child)
                 row_data["expanded"] = False
-                row_data["detail_items"] = []  # Reset detail items
+                row_data["detail_items"] = []
+                logging.info(f"Collapsed row with ID {selected_item} to hide details.")
 
-            # Update the expanded_rows dictionary to reflect changes
-            expanded_rows[selected_item] = row_data
+            expanded_rows[selected_item] = row_data  # Update the expanded_rows dictionary
 
-        # Attach this function to a double-click event
+        # Bind the double-click event to expand/collapse rows
         treeview.bind("<Double-1>", toggle_expand)
 
+        # Style the additional information rows for readability
+        treeview.tag_configure("additional", background="#962f2f", font=("Arial", 10, "italic"))
 
-
-        # Style the additional information rows for readability and background color
-        treeview.tag_configure("additional", background="#8f6a6a", font=("Arial", 10, "italic"))
-
+        logging.info("Unmatched data window initialized and ready for user interaction.")
         unmatched_data_window.mainloop()
-
 
 
     def search_combined_names(self):
