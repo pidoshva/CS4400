@@ -101,18 +101,20 @@ class CombineDataCommand(Command):
             )
             logging.info("Matched data combined successfully.")
 
+            
             # Identify unmatched data
             unmatched_database = database_data[~database_data.apply(
                 lambda row: ((combined_data['Mother_First_Name'] == row['Mother_First_Name']) &
                             (combined_data['Mother_Last_Name'] == row['Mother_Last_Name']) &
-                            (combined_data['Child_Date_of_Birth'] == row['Child_Date_of_Birth'])).any(), axis=1)]
+                            (combined_data['Child_Date_of_Birth'] == row['Child_Date_of_Birth'])).any(), axis=1)].copy()
             unmatched_database['Source'] = 'Database'
 
             unmatched_medicaid = medicaid_data[~medicaid_data.apply(
                 lambda row: ((combined_data['Mother_First_Name'] == row['Mother_First_Name']) &
                             (combined_data['Mother_Last_Name'] == row['Mother_Last_Name']) &
-                            (combined_data['Child_Date_of_Birth'] == row['Child_Date_of_Birth'])).any(), axis=1)]
+                            (combined_data['Child_Date_of_Birth'] == row['Child_Date_of_Birth'])).any(), axis=1)].copy()
             unmatched_medicaid['Source'] = 'Medicaid'
+
 
             # Check if there are unmatched rows in either data frame
             if not unmatched_database.empty or not unmatched_medicaid.empty:
