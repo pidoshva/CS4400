@@ -163,7 +163,7 @@ class App:
 
     def display_unmatched_data(self, unmatched_data):
         """
-        Display a new window with the unmatched data in a Treeview.
+        Display a new window with the unmatched data in a Treeview and provide an option to view it in Excel.
         """
         logging.info("Opening unmatched data window.")
 
@@ -242,9 +242,25 @@ class App:
         # Style the additional information rows for readability
         treeview.tag_configure("additional", background="#962f2f", font=("Arial", 10, "italic"))
 
+        # Button to view the unmatched data in Excel
+        def view_in_excel():
+            try:
+                unmatched_file_path = 'unmatched_data.xlsx'
+                if os.path.exists(unmatched_file_path):
+                    os.system(f"open {unmatched_file_path}")
+                    logging.info("Opened unmatched data in Excel.")
+                else:
+                    messagebox.showerror("Error", "The unmatched data file does not exist.")
+                    logging.error("The unmatched data file does not exist.")
+            except Exception as e:
+                messagebox.showerror("Error", f"Error opening unmatched data Excel file: {e}")
+                logging.error(f"Error opening unmatched data Excel file: {e}")
+
+        view_excel_button = tk.Button(unmatched_data_window, text="View in Excel", command=view_in_excel)
+        view_excel_button.pack(pady=10)
+
         logging.info("Unmatched data window initialized and ready for user interaction.")
         unmatched_data_window.mainloop()
-
 
     def search_combined_names(self):
         logging.info(f"Searching names with term: {self.search_var.get()}")
