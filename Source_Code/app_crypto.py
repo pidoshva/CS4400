@@ -5,9 +5,8 @@ class Crypto:
     def generateKey():
             """Generates a new Fernet key and saves it to a file"""
             key = Fernet.generate_key()
-            if os.stat("key.key").st_size <= 0:
-                with open("key.key", "wb") as key_file:
-                    key_file.write(key)
+            with open("key.key", "wb") as key_file:
+                key_file.write(key)
 
     def loadKey(self):
         """Loads the key from a file"""

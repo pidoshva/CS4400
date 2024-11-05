@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import filedialog, messagebox
 import pandas as pd
 import logging
-from invoker import ReadExcelCommand, CombineDataCommand, Invoker
+from invoker import ReadExcelCommand, CombineDataCommand, GenerateKeyCommand, DeleteFileCommand, Invoker
 import tkinter.ttk as ttk  # for treeview
 import os
 import subprocess
@@ -42,8 +42,8 @@ class App:
         Create the UI elements including buttons to read Excel files, combine data, and display profiles.
         """
         # Set the initial size of the root window
-        self.__root.geometry("500x300")  # Set the window size to 500x300
-        self.__root.minsize(500, 300)  # Ensure the window does not resize smaller than this
+        self.__root.geometry("500x500")  # Set the window size to 500x500
+        self.__root.minsize(500, 500)  # Ensure the window does not resize smaller than this
 
         # Frame to hold the buttons and center them
         button_frame = tk.Frame(self.__root, padx=20, pady=20)
@@ -58,6 +58,18 @@ class App:
 
         # Button to combine the data
         self.combine_button = tk.Button(button_frame, text="Combine Data", command=self.combine_data, width=30, height=2)
+        self.combine_button.pack(pady=10)
+
+        # Button to encrypt files
+        self.combine_button = tk.Button(button_frame, text="Encrypt File", command=self.encrypt_files, width=30, height=2)
+        self.combine_button.pack(pady=10)
+
+        # Button to create encryption key
+        self.combine_button = tk.Button(button_frame, text="Generate Encryption Key", command=self.generate_encryption_key, width=30, height=2)
+        self.combine_button.pack(pady=10)
+
+        # Button to delete encryption key
+        self.combine_button = tk.Button(button_frame, text="Delete Encryption Key", command=self.delete_encryption_key, width=30, height=2)
         self.combine_button.pack(pady=10)
 
         logging.info("UI widgets created.")
@@ -164,6 +176,38 @@ class App:
         display_excel_button.pack(pady=10)
 
         combined_names_window.mainloop()
+
+    def encrypt_files(self):
+        pass
+
+    def generate_encryption_key(self):
+        command = GenerateKeyCommand(self)
+        logging.info("Attempting to generate key.")
+
+        if not os.path.exists("key.key") or os.stat("key.key").st_size <= 0:
+            command.execute()
+            messagebox.showinfo("Success", "Key generated.")
+        else:
+            logging.warning("Key already exists")
+            messagebox.showerror("Error", "To generate a new key, delete previous key.")
+
+    def delete_encryption_key(self):
+        logging.info("Attempting to delte key.")
+        answer = messagebox.askquestion("WARNING!", "Are you sure you want to proceed? Any file encrypted with this key will become permanently unusable.")
+        if answer == 'no':
+            logging.info("Action aborted.")
+            return
+        command = DeleteFileCommand(self)
+        if os.path.exists("key.key"):
+            command.execute("key.key")
+            logging.info("Key successfully deleted.")
+            messagebox.showinfo("Success", "Key successfully deleted.")
+        else:
+            logging.warning("Key does not exist.")
+            messagebox.showerror("Error", "No key exists.")
+
+    def encrypt_file(self):
+        pass
 
     def update_combined_names(self):
         """
@@ -387,6 +431,5 @@ class App:
 if __name__ == "__main__":
     root = tk.Tk()
     app = App(root)
-    Crypto.generateKey()
     root.mainloop()
 
