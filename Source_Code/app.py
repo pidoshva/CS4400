@@ -5,7 +5,6 @@ import logging
 from invoker import ReadExcelCommand, CombineDataCommand, GenerateKeyCommand, DeleteFileCommand, Invoker
 import tkinter.ttk as ttk  # for treeview
 import os
-import subprocess
 import tempfile
 from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
@@ -23,13 +22,9 @@ class App:
     It handles user interactions for reading files, combining data, and displaying profiles.
     """
     def __init__(self, root):
-        """
-        Initialize the main application, setup the UI, and initialize variables.
-        """
-        if root is not None:  # Only setup UI if root is provided
+        if root is not None:
             self.__root = root
             self.__root.title("Excel Combiner")
-            # Create UI elements
             self.create_widgets()
         else:
             self.__root = None
@@ -45,18 +40,15 @@ class App:
         self.__root.geometry("500x500")  # Set the window size to 500x500
         self.__root.minsize(500, 500)  # Ensure the window does not resize smaller than this
 
-        # Frame to hold the buttons and center them
         button_frame = tk.Frame(self.__root, padx=20, pady=20)
-        button_frame.pack(expand=True)  # Add padding to make the UI more spacious
+        button_frame.pack(expand=True)
 
-        # Buttons for reading two Excel files
         self.read_button1 = tk.Button(button_frame, text="Read Excel File 1", command=self.read_excel_file, width=30, height=2)
-        self.read_button1.pack(pady=10)  # Add padding between buttons
+        self.read_button1.pack(pady=10)
 
         self.read_button2 = tk.Button(button_frame, text="Read Excel File 2", command=self.read_excel_file, width=30, height=2)
         self.read_button2.pack(pady=10)
 
-        # Button to combine the data
         self.combine_button = tk.Button(button_frame, text="Combine Data", command=self.combine_data, width=30, height=2)
         self.combine_button.pack(pady=10)
 
@@ -75,9 +67,6 @@ class App:
         logging.info("UI widgets created.")
 
     def read_excel_file(self):
-        """
-        Read an Excel file and append its data to the list of data frames.
-        """
         command = ReadExcelCommand(self)
         data_frame = command.execute()
         if data_frame is not None:
@@ -87,18 +76,13 @@ class App:
             logging.warning("No data frame returned from the file read.")
 
     def combine_data(self):
-        """
-        Combine the two read Excel files and display the combined names.
-        """
         if len(self.__data_frames) >= 2:
             logging.info("Attempting to combine data from two Excel files.")
             command = CombineDataCommand(self, self.__data_frames)
             combined_data = command.execute()
 
             if combined_data is not None:
-                # Store combined data in app
                 self.__combined_data = combined_data
-                # Display the combined names in the UI window
                 self.display_combined_names()
                 logging.info("Data combined and displayed successfully.")
         else:
@@ -106,54 +90,52 @@ class App:
             logging.warning("Attempted to combine data with less than two files.")
 
     def display_combined_names(self):
-        """
-        Display a new window with the list of combined names (Mother ID, Child Name, DOB) 
-        using a Treeview for better data organization and readability.
-        """
         combined_names_window = tk.Toplevel(self.__root)
         combined_names_window.title("Combined Data")
 
-        """
-        Inner function that describes the event of closing the combined_names_window
-        """
         def on_closing():
             if tk.messagebox.askokcancel("Quit", "Do you want to exit this view?\nFiles must be uploaded to view the data again."):
-                combined_names_window.destroy()
+                # Delete the matched data file if it exists
+                matched_file_path = 'combined_matched_data.xlsx'
+                if os.path.exists(matched_file_path):
+                    os.remove(matched_file_path)
+                    logging.info(f"Deleted {matched_file_path}")
+
+                # Delete the unmatched data file if it exists
+                unmatched_file_path = 'unmatched_data.xlsx'
+                if os.path.exists(unmatched_file_path):
+                    os.remove(unmatched_file_path)
+                    logging.info(f"Deleted {unmatched_file_path}")
+
+                # Clear data frames and close window
                 self.__data_frames.clear()
-                print(self.__data_frames)
+                combined_names_window.destroy()
+                logging.info("Combined data window closed and files deleted.")
 
         combined_names_window.protocol("WM_DELETE_WINDOW", on_closing)
 
-        logging.info("Displaying combined names window.")
 
-        # Set the window size and allow resizing
-        combined_names_window.geometry("1000x600")  # Set initial window size
-        combined_names_window.minsize(800, 400)  # Set minimum window size
-        combined_names_window.resizable(True, True)  # Allow both horizontal and vertical resizing
+        combined_names_window.geometry("1000x600")
+        combined_names_window.minsize(800, 400)
+        combined_names_window.resizable(True, True)
 
-        # Frame for search bar and button
         search_frame = tk.Frame(combined_names_window)
         search_frame.pack(fill=tk.X, pady=5)
 
-        # Search Entry widget
         self.search_var = tk.StringVar()
         search_entry = tk.Entry(search_frame, textvariable=self.search_var)
         search_entry.pack(side=tk.LEFT, padx=10, fill=tk.X, expand=True)
 
-        # Search Button
         search_button = tk.Button(search_frame, text="Search", command=self.search_combined_names)
         search_button.pack(side=tk.RIGHT, padx=10)
 
-        # Create a Treeview widget to display the data in columns
         columns = ("Mother ID", "Child Name", "Child DOB")
         self.treeview = ttk.Treeview(combined_names_window, columns=columns, show='headings')
 
-        # Create a scrollbar widget
         tree_scroll = tk.Scrollbar(self.treeview, command=self.treeview.yview)
         tree_scroll.pack(side="right", fill="y")
         self.treeview.configure(yscrollcommand=tree_scroll.set)
 
-        # Define headings and column widths
         self.treeview.heading("Mother ID", text="Mother ID")
         self.treeview.heading("Child Name", text="Child Name")
         self.treeview.heading("Child DOB", text="Child DOB")
@@ -162,18 +144,26 @@ class App:
         self.treeview.column("Child Name", width=250, anchor="center")
         self.treeview.column("Child DOB", width=150, anchor="center")
 
-        # Populate the treeview with the combined data
         self.update_combined_names()
-
-        # Add the treeview to the window and make it fill the available space
         self.treeview.pack(fill=tk.BOTH, expand=True)
-
-        # Bind double-click event to open child profile
         self.treeview.bind('<Double-1>', lambda event: self.show_child_profile(event))
 
-        # Button to display combined data in Excel
         display_excel_button = tk.Button(combined_names_window, text="Display in Excel", command=self.display_in_excel)
         display_excel_button.pack(pady=10)
+
+        unmatched_data_path = 'unmatched_data.xlsx'
+        if os.path.exists(unmatched_data_path):
+            unmatched_data = pd.read_excel(unmatched_data_path)
+            unmatched_count = len(unmatched_data)
+            if unmatched_count > 0:
+                unmatched_button = tk.Button(
+                    combined_names_window,
+                    text="View Unmatched Data",
+                    command=lambda: self.display_unmatched_data(unmatched_data)
+                )
+                unmatched_button.pack(pady=10)
+                count_label = tk.Label(unmatched_button, text=str(unmatched_count), bg="red", fg="white", font=("Arial", 10, "bold"))
+                count_label.place(relx=1.0, rely=0.0, anchor="ne")
 
         combined_names_window.mainloop()
 
@@ -210,31 +200,118 @@ class App:
         pass
 
     def update_combined_names(self):
-        """
-        Update the Treeview with combined names (Mother ID, Child Name, DOB), 
-        filtering the results based on the search term.
-        """
-        # Clear the current contents of the treeview
         self.treeview.delete(*self.treeview.get_children())
-
-        # Get the search term for filtering
         search_term = self.search_var.get().lower()
-
-        # Populate the treeview with matching data
         for index, row in self.__combined_data.iterrows():
             child_name = f"{row['Child_First_Name']} {row['Child_Last_Name']}"
             display_text = f"{row['Mother_ID']} {child_name} (DOB: {row['Child_Date_of_Birth']})"
-
-            # Only add the row if it matches the search term or if no search term is provided
             if search_term in display_text.lower():
                 self.treeview.insert("", "end", values=(row['Mother_ID'], child_name, row['Child_Date_of_Birth']))
 
         logging.info("Treeview updated with filtered names.")
 
+    def display_unmatched_data(self, unmatched_data):
+        """
+        Display a new window with the unmatched data in a Treeview and provide an option to view it in Excel.
+        """
+        logging.info("Opening unmatched data window.")
+
+        unmatched_data_window = tk.Toplevel(self.__root)
+        unmatched_data_window.title("Unmatched Data")
+        unmatched_data_window.geometry("800x400")
+
+        # Define primary columns to show initially
+        primary_columns = ["Source", "Child_ID", "Mother_First_Name", "Mother_Last_Name"]
+        all_columns = list(unmatched_data.columns)
+
+        # Create the Treeview widget with primary columns
+        treeview = ttk.Treeview(unmatched_data_window, columns=primary_columns, show="headings")
+        treeview.pack(fill=tk.BOTH, expand=True)
+
+        # Configure the headings and column widths for primary columns
+        for col in primary_columns:
+            treeview.heading(col, text=col)
+            treeview.column(col, anchor="center", width=150)
+
+        # Dictionary to store whether a row is expanded or collapsed
+        expanded_rows = {}
+
+        # Insert the unmatched data into the Treeview with only primary columns initially
+        for index, row in unmatched_data.iterrows():
+            # Extract primary column values for the main row
+            main_values = [row.get(col, "") for col in primary_columns]
+            row_id = treeview.insert("", "end", values=main_values, open=False)
+            logging.info(f"Inserted unmatched row with ID {row_id} and data: {main_values}")
+            
+            # Prepare additional information as separate rows under the main row
+            additional_info_rows = []
+            for col in all_columns:
+                if col not in primary_columns:
+                    additional_info_rows.append(f"{col}: {row.get(col, '')}")
+            
+            # Store the additional rows data in a hidden structure under each main row
+            expanded_rows[row_id] = {
+                "expanded": False,
+                "details": additional_info_rows
+            }
+
+        def toggle_expand(event):
+            """
+            Toggle displaying additional information for the clicked row.
+            """
+            selected_items = treeview.selection()
+            if not selected_items:
+                logging.warning("No row selected for expansion/collapse.")
+                return
+
+            selected_item = selected_items[0]
+            row_data = expanded_rows.get(selected_item, {})
+            is_expanded = row_data.get("expanded", False)
+
+            if not is_expanded:
+                detail_items = []
+                for detail in row_data["details"]:
+                    detail_item = treeview.insert(selected_item, "end", values=[detail], tags=("additional",))
+                    detail_items.append(detail_item)
+                row_data["expanded"] = True
+                row_data["detail_items"] = detail_items  # Store detail items for future collapse
+                logging.info(f"Expanded row with ID {selected_item} to show details.")
+            else:
+                for child in row_data.get("detail_items", []):
+                    treeview.delete(child)
+                row_data["expanded"] = False
+                row_data["detail_items"] = []
+                logging.info(f"Collapsed row with ID {selected_item} to hide details.")
+
+            expanded_rows[selected_item] = row_data  # Update the expanded_rows dictionary
+
+        # Bind the double-click event to expand/collapse rows
+        treeview.bind("<Double-1>", toggle_expand)
+
+        # Style the additional information rows for readability
+        treeview.tag_configure("additional", background="#962f2f", font=("Arial", 10, "italic"))
+
+        # Button to view the unmatched data in Excel
+        def view_in_excel():
+            try:
+                unmatched_file_path = 'unmatched_data.xlsx'
+                if os.path.exists(unmatched_file_path):
+                    os.system(f"open {unmatched_file_path}")
+                    logging.info("Opened unmatched data in Excel.")
+                else:
+                    messagebox.showerror("Error", "The unmatched data file does not exist.")
+                    logging.error("The unmatched data file does not exist.")
+            except Exception as e:
+                messagebox.showerror("Error", f"Error opening unmatched data Excel file: {e}")
+                logging.error(f"Error opening unmatched data Excel file: {e}")
+
+        view_excel_button = tk.Button(unmatched_data_window, text="View in Excel", command=view_in_excel)
+        view_excel_button.pack(pady=10)
+
+        logging.info("Unmatched data window initialized and ready for user interaction.")
+        unmatched_data_window.mainloop()
+
     def search_combined_names(self):
-        """
-        Filter the combined names based on the search term.
-        """
         logging.info(f"Searching names with term: {self.search_var.get()}")
         self.update_combined_names()
 

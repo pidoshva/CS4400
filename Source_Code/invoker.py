@@ -53,6 +53,7 @@ class ReadExcelCommand(Command):
             messagebox.showerror("Error", f"Error reading file '{self.filepath}': {e}")
             return None
 
+
 class CombineDataCommand(Command):
     """
     Command to combine two data sets (Excel files) by Mother's Name and Child's Date of Birth.
@@ -78,59 +79,76 @@ class CombineDataCommand(Command):
             database_data = self.data_frames[0]
             medicaid_data = self.data_frames[1]
 
-            # Normalize names by stripping spaces, converting to lowercase, and removing non-alphabetic characters
-            def normalize_name(name):
-                if isinstance(name, str):
-                    return ''.join(e for e in name if e.isalnum()).strip().lower()
-                return name
-
-            # Normalize the data for consistent merging
-            database_data['Mother_First_Name'] = database_data['Mother_First_Name'].apply(normalize_name)
-            database_data['Mother_Last_Name'] = database_data['Mother_Last_Name'].apply(normalize_name)
-            medicaid_data['Mother_First_Name'] = medicaid_data['Mother_First_Name'].apply(normalize_name)
-            medicaid_data['Last_Name'] = medicaid_data['Last_Name'].apply(normalize_name)
-
-            logging.info("Normalized names in both datasets.")
-
-            # Ensure both datasets have a standardized Child Date of Birth column
+            # Standardize columns for merging
             database_data.rename(columns={'DOB': 'Child_Date_of_Birth'}, inplace=True)
-            medicaid_data.rename(columns={'Child_DOB': 'Child_Date_of_Birth'}, inplace=True)
+            medicaid_data.rename(columns={'Child_DOB': 'Child_Date_of_Birth', 'Last_Name': 'Mother_Last_Name'}, inplace=True)
 
-            # Convert Child_Date_of_Birth to a consistent format
+            # Normalize the names for matching
+            for df in [database_data, medicaid_data]:
+                for col in ['Mother_First_Name', 'Mother_Last_Name']:
+                    df[col] = df[col].str.lower().str.replace(r'\W', '', regex=True)
+
+            # Convert DOB columns to consistent date format
             database_data['Child_Date_of_Birth'] = pd.to_datetime(database_data['Child_Date_of_Birth'], errors='coerce').dt.strftime('%Y-%m-%d')
             medicaid_data['Child_Date_of_Birth'] = pd.to_datetime(medicaid_data['Child_Date_of_Birth'], errors='coerce').dt.strftime('%Y-%m-%d')
 
-            logging.info("Standardized and formatted Child_Date_of_Birth columns.")
-
-            # Merge the two datasets based on Mother's First Name, Last Name, and Child's Date of Birth
+            # Merge to get combined data
             combined_data = pd.merge(
                 database_data,
                 medicaid_data,
-                left_on=['Mother_First_Name', 'Mother_Last_Name', 'Child_Date_of_Birth'],
-                right_on=['Mother_First_Name', 'Last_Name', 'Child_Date_of_Birth'],
-                how='inner',  # Use inner join to ensure only exact matches are included
+                on=['Mother_First_Name', 'Mother_Last_Name', 'Child_Date_of_Birth'],
+                how='inner',
                 suffixes=('_db', '_medicaid')
             )
+            logging.info("Matched data combined successfully.")
 
-            logging.info("Merged datasets successfully.")
+            
+            # Identify unmatched data
+            unmatched_database = database_data[~database_data.apply(
+                lambda row: ((combined_data['Mother_First_Name'] == row['Mother_First_Name']) &
+                            (combined_data['Mother_Last_Name'] == row['Mother_Last_Name']) &
+                            (combined_data['Child_Date_of_Birth'] == row['Child_Date_of_Birth'])).any(), axis=1)].copy()
+            unmatched_database['Source'] = 'Database'
 
-            # Drop the duplicated 'Last_Name' column from Medicaid data
-            combined_data.drop(columns=['Last_Name'], inplace=True)
+            unmatched_medicaid = medicaid_data[~medicaid_data.apply(
+                lambda row: ((combined_data['Mother_First_Name'] == row['Mother_First_Name']) &
+                            (combined_data['Mother_Last_Name'] == row['Mother_Last_Name']) &
+                            (combined_data['Child_Date_of_Birth'] == row['Child_Date_of_Birth'])).any(), axis=1)].copy()
+            unmatched_medicaid['Source'] = 'Medicaid'
 
-            # Capitalize the first letter of first names and last names
-            combined_data['Mother_First_Name'] = combined_data['Mother_First_Name'].str.capitalize()
-            combined_data['Mother_Last_Name'] = combined_data['Mother_Last_Name'].str.capitalize()
-            combined_data['Child_First_Name'] = combined_data['Child_First_Name'].str.capitalize()
-            combined_data['Child_Last_Name'] = combined_data['Child_Last_Name'].str.capitalize()
 
-            logging.info("Capitalized the first letter of names.")
+            # Check if there are unmatched rows in either data frame
+            if not unmatched_database.empty or not unmatched_medicaid.empty:
+                # Standardize unmatched data columns to align with combined_data
+                unmatched_database = unmatched_database.reindex(columns=combined_data.columns.tolist() + ['Source'], fill_value='')
+                unmatched_medicaid = unmatched_medicaid.reindex(columns=combined_data.columns.tolist() + ['Source'], fill_value='')
 
-            # Save the matched data to an Excel file
+                # Concatenate unmatched records
+                unmatched_data = pd.concat([unmatched_database, unmatched_medicaid], ignore_index=True)
+
+                # Capitalize all names in unmatched data
+                for col in ['Mother_First_Name', 'Mother_Last_Name', 'Child_First_Name', 'Child_Last_Name']:
+                    if col in unmatched_data.columns:
+                        unmatched_data[col] = unmatched_data[col].str.capitalize()
+
+                # Save the unmatched data to an Excel file
+                unmatched_file_path = 'unmatched_data.xlsx'
+                unmatched_data.to_excel(unmatched_file_path, index=False)
+                logging.info(f"Unmatched data saved to {unmatched_file_path}")
+            else:
+                logging.info("No unmatched data found; skipping unmatched data file creation.")
+
+            # Capitalize all names in matched data
+            for col in ['Mother_First_Name', 'Mother_Last_Name', 'Child_First_Name', 'Child_Last_Name']:
+                if col in combined_data.columns:
+                    combined_data[col] = combined_data[col].str.capitalize()
+
+            # Save the matched data
             matched_file_path = 'combined_matched_data.xlsx'
             combined_data.to_excel(matched_file_path, index=False)
             logging.info(f"Matched data saved to {matched_file_path}")
 
-            # Return the matched data to the app for display
+            # Return matched data to the app for display
             self.app.combined_data = combined_data
             return combined_data
 
@@ -138,6 +156,7 @@ class CombineDataCommand(Command):
             logging.error(f"Error combining data: {e}")
             messagebox.showerror("Error", f"Error combining data: {e}")
             return None
+
 
 class GenerateKeyCommand(Command):
     def __init__(self, app):
