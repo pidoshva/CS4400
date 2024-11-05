@@ -1,6 +1,7 @@
 import pandas as pd
 from tkinter import filedialog, messagebox
 import logging
+from app_crypto import *
 
 # Setup logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -156,6 +157,28 @@ class CombineDataCommand(Command):
             messagebox.showerror("Error", f"Error combining data: {e}")
             return None
 
+
+class GenerateKeyCommand(Command):
+    def __init__(self, app):
+        self.app = app
+    
+    def execute(self):
+            Crypto.generateKey()
+    
+class DeleteFileCommand(Command):
+    def __init__(self, app):
+        self.app = app
+
+    def execute(self, path):
+        os.remove(path)
+
+class EncryptFileCommand(Command):
+    def __init__(self, app):
+        self.app = app
+    
+    def execute(self, file, key):
+        Crypto.encrypt_file(file, key)
+        
 
 class Invoker:
     """
