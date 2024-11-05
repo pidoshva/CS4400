@@ -114,7 +114,6 @@ class App:
 
         combined_names_window.protocol("WM_DELETE_WINDOW", on_closing)
 
-
         combined_names_window.geometry("1000x600")
         combined_names_window.minsize(800, 400)
         combined_names_window.resizable(True, True)
@@ -129,22 +128,27 @@ class App:
         search_button = tk.Button(search_frame, text="Search", command=self.search_combined_names)
         search_button.pack(side=tk.RIGHT, padx=10)
 
-        columns = ("Mother ID", "Child Name", "Child DOB")
+        # Add "Assigned Nurse" column to the Treeview
+        columns = ("Mother ID", "Child Name", "Child DOB", "Assigned Nurse")
         self.treeview = ttk.Treeview(combined_names_window, columns=columns, show='headings')
 
         tree_scroll = tk.Scrollbar(self.treeview, command=self.treeview.yview)
         tree_scroll.pack(side="right", fill="y")
         self.treeview.configure(yscrollcommand=tree_scroll.set)
 
-        self.treeview.heading("Mother ID", text="Mother ID")
-        self.treeview.heading("Child Name", text="Child Name")
-        self.treeview.heading("Child DOB", text="Child DOB")
-        
-        self.treeview.column("Mother ID", width=150, anchor="center")
-        self.treeview.column("Child Name", width=250, anchor="center")
-        self.treeview.column("Child DOB", width=150, anchor="center")
+        for col in columns:
+            self.treeview.heading(col, text=col)
+            self.treeview.column(col, anchor="center", width=150)
+
+        # Add the "Assigned Nurse" column to the combined data with "None" as the default value
+        if 'Assigned Nurse' not in self.__combined_data.columns:
+            self.__combined_data['Assigned Nurse'] = 'None'
 
         self.update_combined_names()
+
+        # Ensure the modified data is saved to the combined matched data file
+        self.__combined_data.to_excel('combined_matched_data.xlsx', index=False)
+
         self.treeview.pack(fill=tk.BOTH, expand=True)
         self.treeview.bind('<Double-1>', lambda event: self.show_child_profile(event))
 
@@ -205,10 +209,12 @@ class App:
         for index, row in self.__combined_data.iterrows():
             child_name = f"{row['Child_First_Name']} {row['Child_Last_Name']}"
             display_text = f"{row['Mother_ID']} {child_name} (DOB: {row['Child_Date_of_Birth']})"
+            assigned_nurse = row.get('Assigned Nurse', 'None')  # Ensure "Assigned Nurse" column is shown
             if search_term in display_text.lower():
-                self.treeview.insert("", "end", values=(row['Mother_ID'], child_name, row['Child_Date_of_Birth']))
+                self.treeview.insert("", "end", values=(row['Mother_ID'], child_name, row['Child_Date_of_Birth'], assigned_nurse))
 
         logging.info("Treeview updated with filtered names.")
+
 
     def display_unmatched_data(self, unmatched_data):
         """
@@ -398,12 +404,26 @@ class App:
                 address_info = tk.Label(profile_frame, text=address_info_text, anchor='w', justify=tk.LEFT, font=("Arial", 12))
                 address_info.pack(anchor='w', pady=(5, 10))
 
+            # Display assigned nurse as a separate section
+            nurse_info_label = tk.Label(profile_frame, text="Assigned Nurse", font=("Arial", 14, "bold"))
+            nurse_info_label.pack(anchor='w', pady=(10, 0))
+
+            assigned_nurse = child_data['Assigned Nurse'] if pd.notna(child_data['Assigned Nurse']) else 'None'
+            nurse_info_text = f"Name: {assigned_nurse}"
+
+            nurse_info = tk.Label(profile_frame, text=nurse_info_text, anchor='w', justify=tk.LEFT, font=("Arial", 12))
+            nurse_info.pack(anchor='w', pady=(5, 10))
+
+            # Add "Assign Nurse" button with functionality
+            assign_nurse_button = tk.Button(profile_frame, text="Assign Nurse", command=lambda: self.assign_nurse(child_data, profile_window, nurse_info))
+            assign_nurse_button.pack(pady=(10, 5))
+
             # Option to copy text to clipboard
             copy_button = tk.Button(profile_frame, text="Copy Profile Info", command=lambda: self.copy_to_clipboard(mother_info_text, child_info_text, address_info_text))
             copy_button.pack(pady=(10, 5))
 
             # Button to export the profile information to PDF
-            export_button = tk.Button(profile_frame, text="Export to PDF", command=lambda: self.export_profile_to_pdf(mother_info_text, child_info_text, address_info_text))
+            export_button = tk.Button(profile_frame, text="Export to PDF", command=lambda: self.export_profile_to_pdf(mother_info_text, child_info.cget("text"), address_info_text, nurse_info.cget("text")))
             export_button.pack(pady=(10, 5))
 
             logging.info(f"Profile for {child_first_name} {child_last_name} displayed successfully.")
@@ -411,6 +431,54 @@ class App:
         except Exception as e:
             messagebox.showerror("Error", f"Error loading profile: {e}")
             logging.error(f"Error loading profile for {child_first_name} {child_last_name}: {e}")
+
+    def assign_nurse(self, child_data, profile_window, nurse_info_label):
+        """
+        Open a window to assign a nurse to the selected child.
+        """
+        assign_window = tk.Toplevel(profile_window)
+        assign_window.title("Assign Nurse")
+        assign_window.geometry("300x150")
+
+        tk.Label(assign_window, text="Enter Nurse Name:").pack(pady=5)
+        nurse_name_var = tk.StringVar()
+        nurse_entry = tk.Entry(assign_window, textvariable=nurse_name_var)
+        nurse_entry.pack(pady=5)
+
+        def save_nurse():
+            nurse_name = nurse_name_var.get().strip()
+            if nurse_name:
+                # Update combined data DataFrame
+                index = self.__combined_data[
+                    (self.__combined_data['Mother_ID'].astype(str) == str(child_data['Mother_ID'])) &
+                    (self.__combined_data['Child_First_Name'].str.lower() == child_data['Child_First_Name'].lower()) &
+                    (self.__combined_data['Child_Last_Name'].str.lower() == child_data['Child_Last_Name'].lower()) &
+                    (self.__combined_data['Child_Date_of_Birth'] == child_data['Child_Date_of_Birth'])
+                ].index
+
+                if not index.empty:
+                    self.__combined_data.at[index[0], 'Assigned Nurse'] = nurse_name
+
+                    # Update the Excel file
+                    self.__combined_data.to_excel('combined_matched_data.xlsx', index=False)
+                    logging.info(f"Assigned Nurse '{nurse_name}' to {child_data['Child_First_Name']} {child_data['Child_Last_Name']}.")
+
+                    # Update the nurse section in the profile display
+                    updated_nurse_text = f"Name: {nurse_name}"
+                    nurse_info_label.config(text=updated_nurse_text)
+
+                    # Update the Treeview display
+                    self.update_combined_names()
+
+                    messagebox.showinfo("Success", f"Nurse '{nurse_name}' assigned successfully.")
+                    assign_window.destroy()
+                else:
+                    logging.error("Error finding the row to update nurse assignment.")
+                    messagebox.showerror("Error", "Failed to assign nurse.")
+
+        tk.Button(assign_window, text="Add", command=save_nurse).pack(pady=10)
+
+
 
     def copy_to_clipboard(self, mother_info_text, child_info_text, address_info_text=None):
         """
@@ -434,7 +502,7 @@ class App:
         messagebox.showinfo("Info", "Profile info copied to clipboard.")
         logging.info("Profile info successfully copied to clipboard.")
 
-    def export_profile_to_pdf(self, mother_info_text, child_info_text, address_info_text=None):
+    def export_profile_to_pdf(self, mother_info_text, child_info_text, address_info_text=None, nurse_info_text=None):
         """
         Function to export the profile to a structured PDF document.
         """
@@ -442,7 +510,7 @@ class App:
             # Create a temporary file for the PDF
             pdf_file = tempfile.NamedTemporaryFile(delete=False, suffix=".pdf")
             c = canvas.Canvas(pdf_file.name, pagesize=letter)
-            
+
             # PDF Title and document layout settings
             c.setFont("Helvetica-Bold", 14)
             c.drawString(1 * inch, 10.5 * inch, "Profile Information")
@@ -479,6 +547,12 @@ class App:
                     c.drawString(1.2 * inch, y, line)
                     y -= 12
 
+            # Draw "Assigned Nurse" section if available
+            if nurse_info_text:
+                y = draw_section_header("Assigned Nurse", y - 10)
+                c.drawString(1.2 * inch, y, nurse_info_text)
+                y -= 12
+
             # Save and close PDF
             c.save()
 
@@ -489,6 +563,7 @@ class App:
         except Exception as e:
             messagebox.showerror("Error", f"Error exporting profile: {e}")
             logging.error(f"Error exporting profile to PDF: {e}")
+
 
     def display_in_excel(self):
         """
