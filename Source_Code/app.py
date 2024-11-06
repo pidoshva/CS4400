@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import filedialog, messagebox
 import pandas as pd
 import logging
-from invoker import ReadExcelCommand, CombineDataCommand, GenerateKeyCommand, DeleteFileCommand, Invoker
+from invoker import ReadExcelCommand, CombineDataCommand, GenerateKeyCommand, DeleteFileCommand, EncryptFileCommand, DecryptFileCommand, Invoker
 import tkinter.ttk as ttk  # for treeview
 import os
 import tempfile
@@ -54,6 +54,10 @@ class App:
 
         # Button to encrypt files
         self.combine_button = tk.Button(button_frame, text="Encrypt File", command=self.encrypt_files, width=30, height=2)
+        self.combine_button.pack(pady=10)
+
+        # Button to decrypt files
+        self.combine_button = tk.Button(button_frame, text="Decrypt File", command=self.decrypt_file, width=30, height=2)
         self.combine_button.pack(pady=10)
 
         # Button to create encryption key
@@ -172,13 +176,36 @@ class App:
         combined_names_window.mainloop()
 
     def encrypt_files(self):
-        pass
+        logging.info("Attempting to encrypt file.")
+
+        if not os.path.exists("key.txt"):
+            messagebox.showwarning("Error!", "Key does not exist")
+        else:
+            command = EncryptFileCommand(self) 
+            result = command.execute()
+            if result:
+                messagebox.showinfo("Success", "Encryption Successfull.")
+            else:
+                messagebox.showerror("Error", "Encryption Unsuccessfull")
+
+    def decrypt_file(self):
+        logging.info("Attempting to decrypt file.")
+
+        if not os.path.exists("key.txt"):
+            messagebox.showwarning("Error!", "Key does not exist")
+        else:
+            command = DecryptFileCommand(self) 
+            result = command.execute()
+            if result:
+                messagebox.showinfo("Success", "Decryption Successfull.")
+            else:
+                messagebox.showerror("Error", "Decryption Unsuccessfull")
 
     def generate_encryption_key(self):
         command = GenerateKeyCommand(self)
         logging.info("Attempting to generate key.")
 
-        if not os.path.exists("key.key") or os.stat("key.key").st_size <= 0:
+        if not os.path.exists("key.txt") or os.stat("key.txt").st_size <= 0:
             command.execute()
             messagebox.showinfo("Success", "Key generated.")
         else:
@@ -192,16 +219,13 @@ class App:
             logging.info("Action aborted.")
             return
         command = DeleteFileCommand(self)
-        if os.path.exists("key.key"):
-            command.execute("key.key")
+        if os.path.exists("key.txt"):
+            command.execute("key.txt")
             logging.info("Key successfully deleted.")
             messagebox.showinfo("Success", "Key successfully deleted.")
         else:
             logging.warning("Key does not exist.")
             messagebox.showerror("Error", "No key exists.")
-
-    def encrypt_file(self):
-        pass
 
     def update_combined_names(self):
         self.treeview.delete(*self.treeview.get_children())
