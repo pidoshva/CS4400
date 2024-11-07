@@ -2,7 +2,7 @@ import tkinter as tk
 from tkinter import filedialog, messagebox
 import pandas as pd
 import logging
-from invoker import ReadExcelCommand, CombineDataCommand, Invoker
+from invoker import ReadExcelCommand, CombineDataCommand, GenerateKeyCommand, DeleteFileCommand, EncryptFileCommand, DecryptFileCommand, Invoker
 import tkinter.ttk as ttk  # for treeview
 import os
 import tempfile
@@ -10,7 +10,7 @@ from reportlab.lib.pagesizes import letter
 from reportlab.pdfgen import canvas
 from reportlab.lib import colors
 from reportlab.lib.units import inch
-import platform
+from app_crypto import *
 
 # Setup logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -245,6 +245,58 @@ class App:
                 count_label.place(relx=1.0, rely=0.0, anchor="ne")
 
         combined_names_window.mainloop()
+
+    def encrypt_files(self):
+        logging.info("Attempting to encrypt file.")
+
+        if not os.path.exists("key.txt"):
+            messagebox.showwarning("Error!", "Key does not exist")
+        else:
+            command = EncryptFileCommand(self) 
+            result = command.execute()
+            if result:
+                messagebox.showinfo("Success", "Encryption Successfull.")
+            else:
+                messagebox.showerror("Error", "Encryption Unsuccessfull")
+
+    def decrypt_file(self):
+        logging.info("Attempting to decrypt file.")
+
+        if not os.path.exists("key.txt"):
+            messagebox.showwarning("Error!", "Key does not exist")
+        else:
+            command = DecryptFileCommand(self) 
+            result = command.execute()
+            if result:
+                messagebox.showinfo("Success", "Decryption Successfull.")
+            else:
+                messagebox.showerror("Error", "Decryption Unsuccessfull")
+
+    def generate_encryption_key(self):
+        command = GenerateKeyCommand(self)
+        logging.info("Attempting to generate key.")
+
+        if not os.path.exists("key.txt") or os.stat("key.txt").st_size <= 0:
+            command.execute()
+            messagebox.showinfo("Success", "Key generated.")
+        else:
+            logging.warning("Key already exists")
+            messagebox.showerror("Error", "To generate a new key, delete previous key.")
+
+    def delete_encryption_key(self):
+        logging.info("Attempting to delte key.")
+        answer = messagebox.askquestion("WARNING!", "Are you sure you want to proceed? Any file encrypted with this key will become permanently unusable.")
+        if answer == 'no':
+            logging.info("Action aborted.")
+            return
+        command = DeleteFileCommand(self)
+        if os.path.exists("key.txt"):
+            command.execute("key.txt")
+            logging.info("Key successfully deleted.")
+            messagebox.showinfo("Success", "Key successfully deleted.")
+        else:
+            logging.warning("Key does not exist.")
+            messagebox.showerror("Error", "No key exists.")
 
     def update_combined_names(self):
         """
@@ -519,9 +571,25 @@ class App:
         # Style the additional information rows for readability
         treeview.tag_configure("additional", background="#962f2f", font=("Arial", 10, "italic"))
 
+        # Button to view the unmatched data in Excel
+        def view_in_excel():
+            try:
+                unmatched_file_path = 'unmatched_data.xlsx'
+                if os.path.exists(unmatched_file_path):
+                    os.system(f"open {unmatched_file_path}")
+                    logging.info("Opened unmatched data in Excel.")
+                else:
+                    messagebox.showerror("Error", "The unmatched data file does not exist.")
+                    logging.error("The unmatched data file does not exist.")
+            except Exception as e:
+                messagebox.showerror("Error", f"Error opening unmatched data Excel file: {e}")
+                logging.error(f"Error opening unmatched data Excel file: {e}")
+
+        view_excel_button = tk.Button(unmatched_data_window, text="View in Excel", command=view_in_excel)
+        view_excel_button.pack(pady=10)
+
         logging.info("Unmatched data window initialized and ready for user interaction.")
         unmatched_data_window.mainloop()
-
 
     def search_combined_names(self):
         """
