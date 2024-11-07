@@ -13,6 +13,8 @@ from reportlab.lib import colors
 from reportlab.lib.units import inch
 from app_crypto import *
 
+#wtf
+
 # Setup logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
 
