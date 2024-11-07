@@ -1,7 +1,6 @@
 import pandas as pd
 from faker import Faker
 from datetime import timedelta, date
-import random
 
 # Initialize Faker instance
 fake = Faker()
@@ -50,8 +49,7 @@ def generate_database_data(shared_data):
     ])
 
 # Function to generate the "Medicaid List" data with added Mother ID
-def generate_medicaid_data(shared_data, unmatched_entries=0, unmatched_target="both"):
-    database_data = []
+def generate_medicaid_data(shared_data, unmatched_entries=0):
     medicaid_data = []
     for entry in shared_data:
         mom_dob = fake.date_of_birth(minimum_age=18, maximum_age=50).strftime("%Y-%m-%d")
@@ -72,65 +70,36 @@ def generate_medicaid_data(shared_data, unmatched_entries=0, unmatched_target="b
             county, tobacco_usage, utah_first_time_man
         ])
 
-        state_file_number = fake.unique.random_number(digits=9)
-        database_data.append([
-            entry["child_last_name"], entry["child_first_name"], entry["child_middle_name"], entry["child_dob"], 
-            entry["mom_last_name"], entry["mom_first_name"], state_file_number
-        ])
-
-    # Generate unmatched entries
+    # Generate unmatched entries if specified
     for _ in range(unmatched_entries):
-        if unmatched_target in ["database", "both"]:
-            # Add unmatched entry in Database list
-            child_last_name = fake.last_name()
-            child_first_name = fake.first_name()
-            child_middle_name = fake.first_name()
-            mom_last_name = fake.last_name()
-            mom_first_name = fake.first_name()
-            child_dob = generate_child_dob().strftime("%Y-%m-%d")
-            state_file_number = fake.unique.random_number(digits=9)
-            database_data.append([
-                child_last_name, child_first_name, child_middle_name, child_dob, 
-                mom_last_name, mom_first_name, state_file_number
-            ])
-
-        if unmatched_target in ["medicaid", "both"]:
-            # Add unmatched entry in Medicaid list
-            mom_first_name = fake.first_name()
-            mom_last_name = fake.last_name()
-            mom_dob = fake.date_of_birth(minimum_age=18, maximum_age=50).strftime("%Y-%m-%d")
-            child_first_name = fake.first_name()
-            child_last_name = fake.last_name()
-            child_dob = generate_child_dob().strftime("%Y-%m-%d")
-            mother_id = fake.unique.random_number(digits=9)
-            child_id = fake.unique.random_number(digits=5)
-            case_id = fake.unique.random_number(digits=9)
-            phone_number = fake.phone_number()
-            mobile_number = fake.phone_number()
-            street = fake.street_address()
-            city = fake.city()
-            state = "UT"
-            zip_code = fake.zipcode()
-            county = "Utah County"
-            tobacco_usage = fake.boolean(chance_of_getting_true=10)
-            utah_first_time_man = fake.boolean(chance_of_getting_true=20)
-            medicaid_data.append([
-                mom_first_name, mom_last_name, mom_dob, mother_id, child_id, child_dob, 
-                case_id, phone_number, mobile_number, street, city, state, zip_code, 
-                county, tobacco_usage, utah_first_time_man
-            ])
-    
-    return (
-        pd.DataFrame(database_data, columns=[
-            "Child Last Name", "Child First Name", "Child Middle Name", "DOB", 
-            "Mother Last Name", "Mother First Name", "State File Number"
-        ]),
-        pd.DataFrame(medicaid_data, columns=[
-            "Mother First Name", "Last Name", "Mother DOB", "Mother ID", "Child ID", "Child DOB", 
-            "Case ID", "Phone #", "Mobile #", "Street", "City", "State", "ZIP", 
-            "County", "Tobacco Usage", "Utah First Time Man."
+        mom_first_name = fake.first_name()
+        mom_last_name = fake.last_name()
+        mom_dob = fake.date_of_birth(minimum_age=18, maximum_age=50).strftime("%Y-%m-%d")
+        child_first_name = fake.first_name()
+        child_last_name = fake.last_name()
+        child_dob = generate_child_dob().strftime("%Y-%m-%d")
+        mother_id = fake.unique.random_number(digits=9)
+        child_id = fake.unique.random_number(digits=5)
+        case_id = fake.unique.random_number(digits=9)
+        phone_number = fake.phone_number()
+        mobile_number = fake.phone_number()
+        street = fake.street_address()
+        city = fake.city()
+        state = "UT"
+        zip_code = fake.zipcode()
+        county = "Utah County"
+        tobacco_usage = fake.boolean(chance_of_getting_true=10)
+        utah_first_time_man = fake.boolean(chance_of_getting_true=20)
+        medicaid_data.append([
+            mom_first_name, mom_last_name, mom_dob, mother_id, child_id, child_dob, 
+            case_id, phone_number, mobile_number, street, city, state, zip_code, 
+            county, tobacco_usage, utah_first_time_man
         ])
-    )
+    return pd.DataFrame(medicaid_data, columns=[
+        "Mother First Name", "Last Name", "Mother DOB", "Mother ID", "Child ID", "Child DOB", 
+        "Case ID", "Phone #", "Mobile #", "Street", "City", "State", "ZIP", 
+        "County", "Tobacco Usage", "Utah First Time Man."
+    ])
 
 # Function to verify that all names are present in both sheets
 def verify_names(database_file, medicaid_data_file):
@@ -153,21 +122,18 @@ def verify_names(database_file, medicaid_data_file):
 
 # Main function to generate the files
 def generate_excel_files():
-    # Prompt for the amount of names to generate
-    names_count = int(input("How many names to generate in each list? "))
     # Prompt for unmatched data
     add_unmatched = input("Generate unmatched data? (y/n): ").strip().lower()
     unmatched_entries = 0
-    unmatched_target = "both"
     if add_unmatched == 'y':
-        unmatched_entries = int(input("Enter the number of unmatched entries: "))
-        unmatched_target = input("Add unmatched entries to (database/medicaid/both): ").strip().lower()
+        unmatched_entries = int(input("Enter the range: "))
 
     # Generate shared names and DOBs
-    shared_data = generate_shared_data(names_count)
+    shared_data = generate_shared_data(1000)
 
     # Generate data for both sheets using the shared data
-    database_data_df, medicaid_data_df = generate_medicaid_data(shared_data, unmatched_entries, unmatched_target)
+    database_data_df = generate_database_data(shared_data)
+    medicaid_data_df = generate_medicaid_data(shared_data, unmatched_entries)
 
     # Save the data to Excel files
     database_filename = "database_data.xlsx"
