@@ -48,8 +48,8 @@ class App:
         Postconditions:
             - Buttons for reading files, combining data, and loading existing data are created.
         """
-        self.__root.geometry("500x300")
-        self.__root.minsize(500, 300)
+        self.__root.geometry("500x600")
+        self.__root.minsize(500, 600)
 
         button_frame = tk.Frame(self.__root, padx=20, pady=20)
         button_frame.pack(expand=True)
@@ -65,6 +65,22 @@ class App:
 
         self.upload_existing_button = tk.Button(button_frame, text="Load Existing File", command=self.load_combined_data, width=30, height=2)
         self.upload_existing_button.pack(pady=10)
+
+        # Button to encrypt files
+        self.combine_button = tk.Button(button_frame, text="Encrypt File", command=self.encrypt_files, width=30, height=2)
+        self.combine_button.pack(pady=10)
+
+        # Button to decrypt files
+        self.combine_button = tk.Button(button_frame, text="Decrypt File", command=self.decrypt_file, width=30, height=2)
+        self.combine_button.pack(pady=10)
+
+        # Button to create encryption key
+        self.combine_button = tk.Button(button_frame, text="Generate Encryption Key", command=self.generate_encryption_key, width=30, height=2)
+        self.combine_button.pack(pady=10)
+
+        # Button to delete encryption key
+        self.combine_button = tk.Button(button_frame, text="Delete Encryption Key", command=self.delete_encryption_key, width=30, height=2)
+        self.combine_button.pack(pady=10)
 
         logging.info("UI widgets created.")
 
