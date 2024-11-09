@@ -29,15 +29,15 @@ class ReadExcelCommand(Command):
         self.app = app
         self.filepath = None
 
-    def execute(self):
+    def execute(self, filepath):
         """
         Execute the file selection and read the Excel data into a pandas DataFrame.
         
         Returns:
             DataFrame: A pandas DataFrame representing the content of the Excel file.
         """
-        self.filepath = filedialog.askopenfilename(filetypes=[("Excel files", "*.xlsx *.xls")])
-        if not self.filepath:
+        
+        if not filepath:
             logging.error("No file selected.")
             messagebox.showerror("Error", "No file selected.")
             return None
@@ -47,7 +47,7 @@ class ReadExcelCommand(Command):
             data = pd.read_excel(self.filepath)
             data.columns = [column.replace(" ", "_") for column in data.columns]
             logging.info(f"Successfully read file: {self.filepath}")
-            return data
+            return (data)
         except Exception as e:
             logging.error(f"Error reading file '{self.filepath}': {e}")
             messagebox.showerror("Error", f"Error reading file '{self.filepath}': {e}")
@@ -191,11 +191,8 @@ class DecryptFileCommand(Command):
     def __init__(self, app):
         self.app = app
     
-    def execute(self):
-        logging.info("Browsing file.")
-
+    def execute(self, filepath):
         try:
-            filepath = filedialog.askopenfilename(filetypes=[("Excel files", "*.xlsx *.xls")])
             key = Crypto.loadKey()
             Crypto.decrypt_file(filepath, key)
             return True
