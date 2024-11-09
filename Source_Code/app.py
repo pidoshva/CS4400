@@ -85,6 +85,15 @@ class App:
 
         logging.info("UI widgets created.")
 
+    def decrypt_file(self, filepath):
+        logging.info("Attempting to decrypt file.")
+
+        if not os.path.exists("key.txt"):
+            messagebox.showwarning("Error!", "Key does not exist")
+        else:
+            command = DecryptFileCommand(self) 
+            result = command.execute(filepath)
+
     def read_excel_file(self):
         """
         Read an Excel file chosen by the user and add its data to the data frames list.
@@ -94,11 +103,29 @@ class App:
         Postconditions:
             - Data from the selected file is appended to `__data_frames` if read successfully.
         """
+        
+        logging.info("Selecting File")
+        filepath = filedialog.askopenfilename(filetypes=[("Excel files", "*.xlsx *.xls")])
+
+        logging.info("Checking if file is already encrypted.")
+        if Crypto.is_encrypted(filepath):
+            logging.info("File is encrypted starting decryption")
+            try:
+                self.decrypt_file(filepath)
+                logging.info("File successfully decrypted.")
+            except:
+                logging.error("Error Decrypting File.")
+                messagebox.ERROR("Error", "Error Decrypting File.\nEncryption Key Wrong.")
+                return
+        else:
+            logging.info("File is not encrypted.")
+
         command = ReadExcelCommand(self)
-        data_frame = command.execute()
+
+        data_frame = command.execute(filepath)
         if data_frame is not None:
             self.__data_frames.append(data_frame)
-            logging.info(f"Data from {command.filepath} successfully read and added to data frames.")
+            logging.info(f"Data from {filepath} successfully read and added to data frames.")
         else:
             logging.warning("No data frame returned from the file read.")
     
@@ -275,19 +302,6 @@ class App:
                 messagebox.showinfo("Success", "Encryption Successfull.")
             else:
                 messagebox.showerror("Error", "Encryption Unsuccessfull")
-
-    def decrypt_file(self):
-        logging.info("Attempting to decrypt file.")
-
-        if not os.path.exists("key.txt"):
-            messagebox.showwarning("Error!", "Key does not exist")
-        else:
-            command = DecryptFileCommand(self) 
-            result = command.execute()
-            if result:
-                messagebox.showinfo("Success", "Decryption Successfull.")
-            else:
-                messagebox.showerror("Error", "Decryption Unsuccessfull")
 
     def generate_encryption_key(self):
         command = GenerateKeyCommand(self)
