@@ -20,6 +20,8 @@ Ensure the following requirements are met to run the application:
 - - `tkinter`
 - - `openpyxl`
 - - `logging`
+- - `reportlab`
+- - `cryptography`
 
 You can install the required dependencies using pip:
 ``` bash
