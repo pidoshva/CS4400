@@ -27,7 +27,6 @@ class ReadExcelCommand(Command):
     """
     def __init__(self, app):
         self.app = app
-        self.filepath = None
 
     def execute(self, filepath):
         """
@@ -44,13 +43,13 @@ class ReadExcelCommand(Command):
 
         try:
             # Read the Excel file into a DataFrame and normalize column names
-            data = pd.read_excel(self.filepath)
+            data = pd.read_excel(filepath)
             data.columns = [column.replace(" ", "_") for column in data.columns]
-            logging.info(f"Successfully read file: {self.filepath}")
+            logging.info(f"Successfully read file: {filepath}")
             return (data)
         except Exception as e:
-            logging.error(f"Error reading file '{self.filepath}': {e}")
-            messagebox.showerror("Error", f"Error reading file '{self.filepath}': {e}")
+            logging.error(f"Error reading file '{filepath}': {e}")
+            messagebox.showerror("Error", f"Error reading file '{filepath}': {e}")
             return None
 
 

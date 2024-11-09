@@ -11,6 +11,7 @@ from reportlab.pdfgen import canvas
 from reportlab.lib import colors
 from reportlab.lib.units import inch
 from app_crypto import *
+import platform
 
 # Setup logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -124,7 +125,7 @@ class App:
         data_frame = command.execute(filepath)
         if data_frame is not None:
             self.__data_frames.append(data_frame)
-            logging.info(f"Data from {command.filepath} successfully read and added to data frames.")
+            logging.info(f"Data from {filepath} successfully read and added to data frames.")
         else:
             logging.warning("No data frame returned from the file read.")
     
