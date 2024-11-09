@@ -48,8 +48,8 @@ class App:
         Postconditions:
             - Buttons for reading files, combining data, and loading existing data are created.
         """
-        self.__root.geometry("500x300")
-        self.__root.minsize(500, 300)
+        self.__root.geometry("500x600")
+        self.__root.minsize(500, 600)
 
         button_frame = tk.Frame(self.__root, padx=20, pady=20)
         button_frame.pack(expand=True)
