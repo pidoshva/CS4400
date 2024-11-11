@@ -9,6 +9,11 @@ This application merges data from two Excel files, typically hospital and Medica
 - **Display Profiles:** Double-clicking on a name opens a detailed profile for the selected entry, showing information about the mother, child, and contact details.
 - **Copy to Clipboard:** Users can copy profile information for easy documentation and sharing.
 - **Excel Export:** Saves the combined dataset to an Excel file (combined_matched_data.xlsx).
+- **Unmatched Data:** Displays unmatched data if any found.
+- **Nurse Assignment:** Ability to assign nurses to children
+- **Nurse Statistics:** Displays every assigned nurse and the amount of children assigned to that nurse with an ability to view children's profiles.
+- **Encryption Key Generation:** Generates an encryption key for file encryption.
+- **File Encryption/Decryption:** An ability to encrypt and decrypt `xlsx` file for added protection.
 
 ## Prerequisites
 
@@ -22,6 +27,8 @@ Ensure the following requirements are met to run the application:
 - - `logging`
 - - `reportlab`
 - - `cryptography`
+- - `platform`
+- - `app_crypto`
 
 You can install the required dependencies using pip:
 ``` bash
@@ -83,6 +90,15 @@ Displays detailed information including:
 - **Child’s Information:** First Name, Last Name, Date of Birth.
 - **Contact Information:** Street Address, City, State, ZIP, Phone, and Mobile Number.
 - **Copy Profile Info:** Copies the profile details to the clipboard.
+- **Assign Nurse:** Asks for a name to assign a nurse to the child.
+
+### Unmatched Data Window
+Includes unmatched data with origin specified and an ability to view the details in a drop down format. 
+
+### Nurse Statistics Window
+- **Most Assigned Nurse:** Displays the name of the most assigned nurse.
+- **Least Assigned Nurse:** Displays the name of the least assigned nurse.
+- **Clickable Nurse Names:** Display assigned children to specific nurse and their profiles.
 
 ## Logging
 The application logs key events such as file reading, data combination, and errors. These logs are displayed in the console.
