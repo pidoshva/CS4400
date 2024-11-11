@@ -86,6 +86,17 @@ class App:
         logging.info("UI widgets created.")
 
     def decrypt_file(self, filepath):
+        """
+        Decrypts a specified encrypted file using the existing encryption key.
+
+        Preconditions:
+        - `filepath` is a valid path to the encrypted file.
+        - The encryption key file `key.txt` exists in the working directory.
+        Postconditions:
+        - Displays a warning if the encryption key does not exist.
+        - Executes the decryption process if the key is available.
+        - Logs errors if decryption fails.
+        """
         logging.info("Attempting to decrypt file.")
 
         if not os.path.exists("key.txt"):
@@ -291,6 +302,16 @@ class App:
         combined_names_window.mainloop()
 
     def encrypt_files(self):
+        """
+        Encrypts a selected file using an existing encryption key.
+
+        Preconditions:
+        - The encryption key file (`key.txt`) exists in the working directory.
+        Postconditions:
+        - Displays a warning if the encryption key does not exist.
+        - Encrypts the file if the key exists.
+        - Logs errors if encryption fails.
+        """
         logging.info("Attempting to encrypt file.")
 
         if not os.path.exists("key.txt"):
@@ -304,6 +325,16 @@ class App:
                 messagebox.showerror("Error", "Encryption Unsuccessfull")
 
     def generate_encryption_key(self):
+        """
+        Generates a new encryption key and saves it to `key.txt`.
+
+        Preconditions:
+        - `key.txt` does not exist or is empty.
+        Postconditions:
+        - Displays an error message if a key already exists.
+        - Generates a new encryption key if no key exists.
+        - Saves the key to `key.txt`.
+        """
         command = GenerateKeyCommand(self)
         logging.info("Attempting to generate key.")
 
@@ -315,6 +346,16 @@ class App:
             messagebox.showerror("Error", "To generate a new key, delete previous key.")
 
     def delete_encryption_key(self):
+        """
+        Deletes the existing encryption key (`key.txt`) from the working directory.
+
+        Preconditions:
+        - The encryption key file (`key.txt`) exists in the working directory.
+        Postconditions:
+        - Displays a warning if the user cancels the operation.
+        - Deletes the encryption key if confirmed by the user.
+        - Logs errors if the key does not exist.
+        """
         logging.info("Attempting to delte key.")
         answer = messagebox.askquestion("WARNING!", "Are you sure you want to proceed? Any file encrypted with this key will become permanently unusable.")
         if answer == 'no':
