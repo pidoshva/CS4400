@@ -85,7 +85,7 @@ class App:
 
         logging.info("UI widgets created.")
 
-    def decrypt_file(self, filepath):
+    def decrypt_file(self, filepath = None):
         """
         Decrypts a specified encrypted file using the existing encryption key.
 
@@ -98,6 +98,9 @@ class App:
         - Logs errors if decryption fails.
         """
         logging.info("Attempting to decrypt file.")
+
+        if filepath == None:
+            filepath = filepath = filedialog.askopenfilename(filetypes=[("Excel files", "*.xlsx *.xls")])
 
         if not os.path.exists("key.txt"):
             messagebox.showwarning("Error!", "Key does not exist")
