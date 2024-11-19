@@ -873,7 +873,7 @@ class App:
         # Create a new window for batch assignment
         batch_window = tk.Toplevel(self.__root)
         batch_window.title("Batch Assign Nurses")
-        batch_window.geometry("400x300")
+        batch_window.geometry("400x400")
 
         # Filter input fields
         tk.Label(batch_window, text="Filter by City:").pack(pady=5)
@@ -885,6 +885,11 @@ class App:
         state_var = tk.StringVar()
         state_entry = tk.Entry(batch_window, textvariable=state_var)
         state_entry.pack(pady=5)
+
+        tk.Label(batch_window, text="Filter by ZIP Code:").pack(pady=5)
+        zip_var = tk.StringVar()
+        zip_entry = tk.Entry(batch_window, textvariable=zip_var)
+        zip_entry.pack(pady=5)
 
         tk.Label(batch_window, text="Enter Nurse Name:").pack(pady=5)
         nurse_name_var = tk.StringVar()
@@ -903,6 +908,7 @@ class App:
             """
             city = city_var.get().strip().lower()
             state = state_var.get().strip().lower()
+            zip_code = zip_var.get().strip()
             nurse_name = nurse_name_var.get().strip()
 
             if not nurse_name:
@@ -911,8 +917,9 @@ class App:
 
             # Apply filters to the combined data
             filtered_data = self.__combined_data[
-                (self.__combined_data['City'].str.lower() == city if city else True) &
-                (self.__combined_data['State'].str.lower() == state if state else True)
+                ((self.__combined_data['City'].str.lower() == city) if city else True) &
+                ((self.__combined_data['State'].str.lower() == state) if state else True) &
+                ((self.__combined_data['ZIP'].astype(str) == zip_code) if zip_code else True)
             ]
 
             if filtered_data.empty:
