@@ -218,8 +218,9 @@ class App:
 
     def display_combined_names(self):
         """
-        Display combined data in a new Toplevel window with options for searching and viewing details.
-        
+        Display combined data in a new Toplevel window with options for searching,
+        viewing details, and batch assigning nurses.
+
         Preconditions:
             - `self.__combined_data` is a valid DataFrame with data to display.
         Postconditions:
@@ -230,19 +231,6 @@ class App:
 
         def on_closing():
             if tk.messagebox.askokcancel("Quit", "Do you want to exit this view?\nFiles must be uploaded to view the data again."):
-                # matched_file_path = 'combined_matched_data.xlsx'
-                # if os.path.exists(matched_file_path):
-                #     os.remove(matched_file_path)
-                #     logging.info(f"Deleted {matched_file_path}")
-
-                # unmatched_file_path = 'unmatched_data.xlsx'
-                # if os.path.exists(unmatched_file_path):
-                #     os.remove(unmatched_file_path)
-                #     logging.info(f"Deleted {unmatched_file_path}")
-
-                # self.__data_frames.clear()
-                # combined_names_window.destroy()
-                # logging.info("Combined data window closed and files deleted.")
                 combined_names_window.destroy()
                 logging.info("Combined data window closed.")
 
@@ -285,8 +273,15 @@ class App:
         self.treeview.pack(fill=tk.BOTH, expand=True)
         self.treeview.bind('<Double-1>', lambda event: self.show_child_profile(event))
 
-        display_excel_button = tk.Button(combined_names_window, text="Display in Excel", command=self.display_in_excel)
-        display_excel_button.pack(pady=10)
+        buttons_frame = tk.Frame(combined_names_window)
+        buttons_frame.pack(fill=tk.X, pady=10)
+
+        display_excel_button = tk.Button(buttons_frame, text="Display in Excel", command=self.display_in_excel)
+        display_excel_button.pack(side=tk.LEFT, padx=10)
+
+        # Add "Batch Assign Nurses" button
+        batch_assign_button = tk.Button(buttons_frame, text="Batch Assign Nurses", command=self.batch_assign_nurses)
+        batch_assign_button.pack(side=tk.LEFT, padx=10)
 
         unmatched_data_path = 'unmatched_data.xlsx'
         if os.path.exists(unmatched_data_path):
@@ -294,15 +289,16 @@ class App:
             unmatched_count = len(unmatched_data)
             if unmatched_count > 0:
                 unmatched_button = tk.Button(
-                    combined_names_window,
+                    buttons_frame,
                     text="View Unmatched Data",
                     command=lambda: self.display_unmatched_data(unmatched_data)
                 )
-                unmatched_button.pack(pady=10)
+                unmatched_button.pack(side=tk.LEFT, padx=10)
                 count_label = tk.Label(unmatched_button, text=str(unmatched_count), bg="red", fg="white", font=("Arial", 10, "bold"))
                 count_label.place(relx=1.0, rely=0.0, anchor="ne")
 
         combined_names_window.mainloop()
+
 
     def encrypt_files(self):
         """
@@ -858,6 +854,96 @@ class App:
                     messagebox.showerror("Error", "Failed to assign nurse.")
 
         tk.Button(assign_window, text="Add", command=save_nurse).pack(pady=10)
+
+    def batch_assign_nurses(self):
+        """
+        Assign a nurse to multiple children at once based on user-defined filters.
+
+        Preconditions:
+            - `self.__combined_data` contains the combined data.
+        Postconditions:
+            - Updates the `Assigned Nurse` field for all rows matching the filters.
+            - Saves the updated data to the Excel file.
+        """
+        if self.__combined_data is None or self.__combined_data.empty:
+            messagebox.showerror("Error", "No data available for batch assignment.")
+            logging.error("No data available for batch assignment.")
+            return
+
+        # Create a new window for batch assignment
+        batch_window = tk.Toplevel(self.__root)
+        batch_window.title("Batch Assign Nurses")
+        batch_window.geometry("400x400")
+
+        # Filter input fields
+        tk.Label(batch_window, text="Filter by City:").pack(pady=5)
+        city_var = tk.StringVar()
+        city_entry = tk.Entry(batch_window, textvariable=city_var)
+        city_entry.pack(pady=5)
+
+        tk.Label(batch_window, text="Filter by State:").pack(pady=5)
+        state_var = tk.StringVar()
+        state_entry = tk.Entry(batch_window, textvariable=state_var)
+        state_entry.pack(pady=5)
+
+        tk.Label(batch_window, text="Filter by ZIP Code:").pack(pady=5)
+        zip_var = tk.StringVar()
+        zip_entry = tk.Entry(batch_window, textvariable=zip_var)
+        zip_entry.pack(pady=5)
+
+        tk.Label(batch_window, text="Enter Nurse Name:").pack(pady=5)
+        nurse_name_var = tk.StringVar()
+        nurse_entry = tk.Entry(batch_window, textvariable=nurse_name_var)
+        nurse_entry.pack(pady=5)
+
+        def apply_batch_assignment():
+            """
+            Applies the nurse assignment to all rows matching the filters.
+
+            Preconditions:
+                - Filters are valid and match rows in `self.__combined_data`.
+            Postconditions:
+                - Updates the `Assigned Nurse` field for matching rows.
+                - Saves the updated data to the Excel file.
+            """
+            city = city_var.get().strip().lower()
+            state = state_var.get().strip().lower()
+            zip_code = zip_var.get().strip()
+            nurse_name = nurse_name_var.get().strip()
+
+            if not nurse_name:
+                messagebox.showerror("Error", "Nurse name is required.")
+                return
+
+            # Apply filters to the combined data
+            filtered_data = self.__combined_data[
+                ((self.__combined_data['City'].str.lower() == city) if city else True) &
+                ((self.__combined_data['State'].str.lower() == state) if state else True) &
+                ((self.__combined_data['ZIP'].astype(str) == zip_code) if zip_code else True)
+            ]
+
+            if filtered_data.empty:
+                messagebox.showinfo("No Matches", "No records match the specified filters.")
+                return
+
+            # Update the `Assigned Nurse` field
+            for index in filtered_data.index:
+                self.__combined_data.at[index, 'Assigned Nurse'] = nurse_name
+
+            # Save the updated data
+            self.__combined_data.to_excel('combined_matched_data.xlsx', index=False)
+            logging.info(f"Nurse '{nurse_name}' assigned to {len(filtered_data)} children.")
+
+            # Update the Treeview display
+            self.update_combined_names()
+
+            messagebox.showinfo("Success", f"Nurse '{nurse_name}' assigned to {len(filtered_data)} children.")
+            batch_window.destroy()
+
+        # Apply button
+        apply_button = tk.Button(batch_window, text="Apply", command=apply_batch_assignment)
+        apply_button.pack(pady=10)
+
 
     def copy_to_clipboard(self, mother_info_text, child_info_text, address_info_text=None):
         """
