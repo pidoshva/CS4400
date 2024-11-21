@@ -24,8 +24,7 @@ class testfileEncryption(unittest.TestCase):
    file.write("this is a test file for encryption")
    
    self.crypto_key = b'1234567890abcdef'  # 16 bytes for 128-bit AES encryption
-
-def test_file_encryption_decription(self) :
+ def test_file_encryption_decription(self) :
   self.app_crypto.crypto.encrypt_file(self.input_file,self.crypto_key)
   with open(self.encrypted_file, 'r') as file:
     try:
@@ -39,8 +38,8 @@ def test_file_encryption_decription(self) :
    original_file = originalFile.read()
    decrip_file = decriptedfile.read()
    self.assertEqual(original_file,decrip_file),
-   #should I run teardown function here?
-     # checks for data that is not text
+  
+  # checks for data that is not text
   #if the byte sequence can be successfully decoded into a string using the UTF-8 encoding.
   def is_binary(data):
     try:
@@ -53,6 +52,6 @@ def test_file_encryption_decription(self) :
         for file in [self.input_file, self.encrypted_file, self.decrypted_file]:
             if os.path.exists(file):
                 os.remove(file)
-             
+                
 if __name__ == '__main__':
     unittest.main()
