@@ -175,15 +175,18 @@ class EncryptFileCommand(Command):
     def __init__(self, app):
         self.app = app
     
-    def execute(self):
-        logging.info("Browsing file.")
-
+    def execute(self, filepath = None):
         try:
-            filepath = filedialog.askopenfilename(filetypes=[("Excel files", "*.xlsx *.xls")])
+            logging.info("Attempting to encrypt files.")
+            if filepath == None:
+                logging.info("Browsing file.")
+                filepath = filedialog.askopenfilename(filetypes=[("Excel files", "*.xlsx *.xls")])
             key = Crypto.loadKey()
             Crypto.encrypt_file(filepath, key)
+            logging.info("Files encrypted")
             return True
         except:
+            logging.info("Files could not be encrypted")
             return False
 
 class DecryptFileCommand(Command):

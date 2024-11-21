@@ -37,8 +37,20 @@ class App:
         else:
             self.__root = None
 
+        if not os.path.exists("key.txt"):
+            logging.info("Encryption key does not exist.\nGenerating new key")
+            try:
+                self.generate_encryption_key()
+                logging.info("Successfully generated new encryption key.")
+            except:
+                messagebox.WARNING("Warning!", "Error generating encryption key.")
+
         self._combined_data = None
         self.__data_frames = []
+
+    def on_closing(self):
+        logging.info("Closing App")
+        root.destroy()
 
     def create_widgets(self):
         """
@@ -68,20 +80,20 @@ class App:
         self.upload_existing_button.pack(pady=10)
 
         # Button to encrypt files
-        self.combine_button = tk.Button(button_frame, text="Encrypt File", command=self.encrypt_files, width=30, height=2)
-        self.combine_button.pack(pady=10)
+        #self.combine_button = tk.Button(button_frame, text="Encrypt File", command=self.encrypt_files, width=30, height=2)
+        #self.combine_button.pack(pady=10)
 
         # Button to decrypt files
-        self.combine_button = tk.Button(button_frame, text="Decrypt File", command=self.decrypt_file, width=30, height=2)
-        self.combine_button.pack(pady=10)
+        #self.combine_button = tk.Button(button_frame, text="Decrypt File", command=self.decrypt_file, width=30, height=2)
+        #self.combine_button.pack(pady=10)
 
         # Button to create encryption key
-        self.combine_button = tk.Button(button_frame, text="Generate Encryption Key", command=self.generate_encryption_key, width=30, height=2)
-        self.combine_button.pack(pady=10)
+        #self.combine_button = tk.Button(button_frame, text="Generate Encryption Key", command=self.generate_encryption_key, width=30, height=2)
+        #self.combine_button.pack(pady=10)
 
         # Button to delete encryption key
-        self.combine_button = tk.Button(button_frame, text="Delete Encryption Key", command=self.delete_encryption_key, width=30, height=2)
-        self.combine_button.pack(pady=10)
+        #self.combine_button = tk.Button(button_frame, text="Delete Encryption Key", command=self.delete_encryption_key, width=30, height=2)
+        #self.combine_button.pack(pady=10)
 
         logging.info("UI widgets created.")
 
@@ -121,6 +133,7 @@ class App:
         logging.info("Selecting File")
         filepath = filedialog.askopenfilename(filetypes=[("Excel files", "*.xlsx *.xls")])
 
+        #decrypt files
         logging.info("Checking if file is already encrypted.")
         if Crypto.is_encrypted(filepath):
             logging.info("File is encrypted starting decryption")
@@ -142,6 +155,13 @@ class App:
             logging.info(f"Data from {filepath} successfully read and added to data frames.")
         else:
             logging.warning("No data frame returned from the file read.")
+
+        try:
+            #reencrypt files
+            command = EncryptFileCommand(self)
+            command.execute(filepath)
+        except:
+            messagebox.showwarning("Warning", "Error reencrypting files.")
     
     def load_combined_data(self):
         """
@@ -187,7 +207,8 @@ class App:
             if combined_data is not None:
                 self.__combined_data = combined_data
                 # Save combined data to an Excel file
-                self.__combined_data.to_excel('combined_matched_data.xlsx', index=False)
+                filepath = 'combined_matched_data.xlsx'
+                self.__combined_data.to_excel(filepath, index=False)
                 logging.info("Combined data saved to 'combined_matched_data.xlsx'")
 
                 # Display the combined data
@@ -1067,9 +1088,11 @@ class App:
         except Exception as e:
             messagebox.showerror("Error", f"Error opening Excel file: {e}")
             logging.error(f"Error opening Excel file: {e}")
+    
 
 if __name__ == "__main__":
     root = tk.Tk()
     app = App(root)
+    root.protocol("WM_DELETE_WINDOW", app.on_closing)
     root.mainloop()
 
