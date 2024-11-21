@@ -13,18 +13,21 @@ class Crypto:
         with open("key.txt", "rb") as key_file:
             key = key_file.read()
         return key
-
+    @staticmethod
     def encrypt_file(file_path, key):
+        fernet = Fernet(key)
         """encrypts the given file using the provided Fernet key"""
         with open(file_path, "rb") as file:
+              
+            
             original_data = file.read()
 
-        fernet = Fernet(key)
+        
         encrypted_data = fernet.encrypt(original_data)
 
         with open(file_path, "wb") as file:
             file.write(encrypted_data)
-
+    @staticmethod
     def decrypt_file(file_path, key):
         """Decrypts the given file using the provided Fernet key"""
 
