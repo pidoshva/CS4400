@@ -240,7 +240,7 @@ class App:
     def display_combined_names(self):
         """
         Display combined data in a new Toplevel window with options for searching,
-        viewing details, and batch assigning nurses.
+        viewing details, sorting by DOB, and batch assigning nurses.
 
         Preconditions:
             - `self.__combined_data` is a valid DataFrame with data to display.
@@ -270,6 +270,15 @@ class App:
 
         search_button = tk.Button(search_frame, text="Search", command=self.search_combined_names)
         search_button.pack(side=tk.RIGHT, padx=10)
+
+        # Sort Button for DOB
+        self.sort_ascending = True  # Track sorting order
+        sort_button = tk.Button(
+            search_frame,
+            text="Sort by DOB ▲",  # Default to ascending order
+            command=lambda: self.sort_combined_data(combined_names_window, sort_button)
+        )
+        sort_button.pack(side=tk.RIGHT, padx=10)
 
         nurse_stats_button = tk.Button(combined_names_window, text="Nurse Statistics", command=self.show_nurse_statistics)
         nurse_stats_button.pack(pady=10)
@@ -319,6 +328,40 @@ class App:
                 count_label.place(relx=1.0, rely=0.0, anchor="ne")
 
         combined_names_window.mainloop()
+
+    def sort_combined_data(self, combined_names_window, sort_button):
+        """
+        Sort the combined data by Child_Date_of_Birth and refresh the Treeview.
+
+        Preconditions:
+            - `self.__combined_data` is a valid DataFrame.
+        Postconditions:
+            - The Treeview is updated with data sorted by Child_Date_of_Birth in the specified order.
+        """
+        if self.__combined_data is None or self.__combined_data.empty:
+            messagebox.showerror("Error", "No data available for sorting.")
+            logging.error("No data available for sorting.")
+            return
+
+        # Check if the column exists
+        if 'Child_Date_of_Birth' not in self.__combined_data.columns:
+            messagebox.showerror("Error", "The 'Child_Date_of_Birth' column is missing.")
+            logging.error("The 'Child_Date_of_Birth' column is missing.")
+            return
+
+        # Toggle sort order
+        self.sort_ascending = not self.sort_ascending
+        sort_order = "ascending" if self.sort_ascending else "descending"
+
+        # Update button text to show current order
+        sort_button.config(text=f"Sort by DOB {'▲' if self.sort_ascending else '▼'}")
+
+        # Sort data
+        self.__combined_data.sort_values(by='Child_Date_of_Birth', ascending=self.sort_ascending, inplace=True)
+        logging.info(f"Sorted data by Child_Date_of_Birth in {sort_order} order.")
+
+        # Refresh Treeview
+        self.update_combined_names()
 
 
     def encrypt_files(self):
