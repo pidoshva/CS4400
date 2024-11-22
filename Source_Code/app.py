@@ -50,6 +50,10 @@ class App:
 
     def on_closing(self):
         logging.info("Closing App")
+        filepath = 'combined_matched_data.xlsx'
+        #encrypt combined data files
+        command = EncryptFileCommand(self)
+        command.execute(filepath)
         root.destroy()
 
     def create_widgets(self):
@@ -78,22 +82,6 @@ class App:
 
         self.upload_existing_button = tk.Button(button_frame, text="Load Existing File", command=self.load_combined_data, width=30, height=2)
         self.upload_existing_button.pack(pady=10)
-
-        # Button to encrypt files
-        #self.combine_button = tk.Button(button_frame, text="Encrypt File", command=self.encrypt_files, width=30, height=2)
-        #self.combine_button.pack(pady=10)
-
-        # Button to decrypt files
-        #self.combine_button = tk.Button(button_frame, text="Decrypt File", command=self.decrypt_file, width=30, height=2)
-        #self.combine_button.pack(pady=10)
-
-        # Button to create encryption key
-        #self.combine_button = tk.Button(button_frame, text="Generate Encryption Key", command=self.generate_encryption_key, width=30, height=2)
-        #self.combine_button.pack(pady=10)
-
-        # Button to delete encryption key
-        #self.combine_button = tk.Button(button_frame, text="Delete Encryption Key", command=self.delete_encryption_key, width=30, height=2)
-        #self.combine_button.pack(pady=10)
 
         logging.info("UI widgets created.")
 
@@ -179,6 +167,10 @@ class App:
             return
 
         try:
+            if Crypto.is_encrypted(file_path):
+                command = DecryptFileCommand(self) 
+                result = command.execute(file_path)
+
             # Load the existing combined data
             self.__combined_data = pd.read_excel(file_path)
             logging.info("Successfully loaded combined data from 'combined_matched_data.xlsx'")

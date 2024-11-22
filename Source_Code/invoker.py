@@ -181,12 +181,16 @@ class EncryptFileCommand(Command):
             if filepath == None:
                 logging.info("Browsing file.")
                 filepath = filedialog.askopenfilename(filetypes=[("Excel files", "*.xlsx *.xls")])
+            if not os.path.exists(filepath):
+                logging.warning(f"Filepath {filepath} does not exist, cannot encrypt")
+                return
             key = Crypto.loadKey()
             Crypto.encrypt_file(filepath, key)
             logging.info("Files encrypted")
             return True
-        except:
+        except Exception as e:
             logging.info("Files could not be encrypted")
+            logging.info(e)
             return False
 
 class DecryptFileCommand(Command):
