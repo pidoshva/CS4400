@@ -12,6 +12,7 @@ from reportlab.lib import colors
 from reportlab.lib.units import inch
 from app_crypto import *
 import platform
+from datetime import datetime
 
 # Setup logging
 logging.basicConfig(level=logging.INFO, format='%(asctime)s - %(levelname)s - %(message)s')
@@ -37,8 +38,20 @@ class App:
         else:
             self.__root = None
 
+        if not os.path.exists("key.txt"):
+            logging.info("Encryption key does not exist.\nGenerating new key")
+            try:
+                self.generate_encryption_key()
+                logging.info("Successfully generated new encryption key.")
+            except:
+                messagebox.WARNING("Warning!", "Error generating encryption key.")
+
         self._combined_data = None
         self.__data_frames = []
+
+    def on_closing(self):
+        logging.info("Closing App")
+        root.destroy()
 
     def create_widgets(self):
         """
@@ -68,20 +81,20 @@ class App:
         self.upload_existing_button.pack(pady=10)
 
         # Button to encrypt files
-        self.combine_button = tk.Button(button_frame, text="Encrypt File", command=self.encrypt_files, width=30, height=2)
-        self.combine_button.pack(pady=10)
+        #self.combine_button = tk.Button(button_frame, text="Encrypt File", command=self.encrypt_files, width=30, height=2)
+        #self.combine_button.pack(pady=10)
 
         # Button to decrypt files
-        self.combine_button = tk.Button(button_frame, text="Decrypt File", command=self.decrypt_file, width=30, height=2)
-        self.combine_button.pack(pady=10)
+        #self.combine_button = tk.Button(button_frame, text="Decrypt File", command=self.decrypt_file, width=30, height=2)
+        #self.combine_button.pack(pady=10)
 
         # Button to create encryption key
-        self.combine_button = tk.Button(button_frame, text="Generate Encryption Key", command=self.generate_encryption_key, width=30, height=2)
-        self.combine_button.pack(pady=10)
+        #self.combine_button = tk.Button(button_frame, text="Generate Encryption Key", command=self.generate_encryption_key, width=30, height=2)
+        #self.combine_button.pack(pady=10)
 
         # Button to delete encryption key
-        self.combine_button = tk.Button(button_frame, text="Delete Encryption Key", command=self.delete_encryption_key, width=30, height=2)
-        self.combine_button.pack(pady=10)
+        #self.combine_button = tk.Button(button_frame, text="Delete Encryption Key", command=self.delete_encryption_key, width=30, height=2)
+        #self.combine_button.pack(pady=10)
 
         logging.info("UI widgets created.")
 
@@ -121,6 +134,7 @@ class App:
         logging.info("Selecting File")
         filepath = filedialog.askopenfilename(filetypes=[("Excel files", "*.xlsx *.xls")])
 
+        #decrypt files
         logging.info("Checking if file is already encrypted.")
         if Crypto.is_encrypted(filepath):
             logging.info("File is encrypted starting decryption")
@@ -142,6 +156,13 @@ class App:
             logging.info(f"Data from {filepath} successfully read and added to data frames.")
         else:
             logging.warning("No data frame returned from the file read.")
+
+        try:
+            #reencrypt files
+            command = EncryptFileCommand(self)
+            command.execute(filepath)
+        except:
+            messagebox.showwarning("Warning", "Error reencrypting files.")
     
     def load_combined_data(self):
         """
@@ -187,7 +208,8 @@ class App:
             if combined_data is not None:
                 self.__combined_data = combined_data
                 # Save combined data to an Excel file
-                self.__combined_data.to_excel('combined_matched_data.xlsx', index=False)
+                filepath = 'combined_matched_data.xlsx'
+                self.__combined_data.to_excel(filepath, index=False)
                 logging.info("Combined data saved to 'combined_matched_data.xlsx'")
 
                 # Display the combined data
@@ -214,6 +236,268 @@ class App:
 
         # Display logic here for the combined data
         self.display_combined_names()
+
+
+    def generate_report(self):
+        """
+        Generate a statistical report for the combined data and display it in a new window.
+
+        Preconditions:
+            - `self.__combined_data` contains valid data.
+        Postconditions:
+            - A new window displays the statistical report.
+            - Optionally, the report can be exported as a PDF.
+        """
+        if self.__combined_data is None or self.__combined_data.empty:
+            messagebox.showerror("Error", "No data available for generating a report.")
+            logging.error("No data available for generating a report.")
+            return
+
+        # Prepare data
+        total_children = len(self.__combined_data)
+        unassigned_children_list = self.__combined_data[self.__combined_data['Assigned Nurse'].isna()]
+        unassigned_children_count = len(unassigned_children_list)
+        assigned_nurses = self.__combined_data['Assigned Nurse'].value_counts()
+        
+
+        # Age-related statistics
+        today = datetime.today()
+        self.__combined_data['Child_Date_of_Birth'] = pd.to_datetime(self.__combined_data['Child_Date_of_Birth'], errors='coerce')
+
+        def calculate_age(dob):
+            if pd.isnull(dob):
+                return "Unknown"
+            delta = today - dob
+            years = delta.days // 365
+            months = (delta.days % 365) // 30
+            days = delta.days % 30
+            if years < 1 and months < 1:
+                return f"{days} days"
+            elif years < 1:
+                return f"{months} months"
+            elif months == 0:
+                return f"{years} years"
+            else:
+                return f"{years} years, {months} months"
+
+        self.__combined_data['Age'] = self.__combined_data['Child_Date_of_Birth'].apply(calculate_age)
+        avg_age = self.__combined_data['Child_Date_of_Birth'].apply(lambda dob: (today - dob).days // 365 if pd.notnull(dob) else None).mean()
+        youngest_child = self.__combined_data.loc[self.__combined_data['Child_Date_of_Birth'].idxmax()] if not self.__combined_data['Child_Date_of_Birth'].isna().all() else None
+        oldest_child = self.__combined_data.loc[self.__combined_data['Child_Date_of_Birth'].idxmin()] if not self.__combined_data['Child_Date_of_Birth'].isna().all() else None
+
+        # State statistics
+        children_per_state = self.__combined_data['State'].value_counts()
+
+        # Create a new window for the report
+        report_window = tk.Toplevel(self.__root)
+        report_window.title("Statistical Report")
+        report_window.geometry("1000x1000")
+
+        # Display statistics
+        tk.Label(report_window, text=f"Total Children: {total_children}", font=("Arial", 12)).pack(pady=5)
+        tk.Label(report_window, text=f"Unassigned Children: {unassigned_children_count}", font=("Arial", 12)).pack(pady=5)
+        tk.Label(report_window, text=f"Average Age: {avg_age:.1f} years" if avg_age else "Average Age: N/A", font=("Arial", 12)).pack(pady=5)
+
+        if youngest_child is not None:
+            tk.Label(
+                report_window,
+                text=f"Youngest Child: {youngest_child['Child_First_Name']} {youngest_child['Child_Last_Name']} ({calculate_age(youngest_child['Child_Date_of_Birth'])})",
+                font=("Arial", 12)
+            ).pack(pady=5)
+        if oldest_child is not None:
+            tk.Label(
+                report_window,
+                text=f"Oldest Child: {oldest_child['Child_First_Name']} {oldest_child['Child_Last_Name']} ({calculate_age(oldest_child['Child_Date_of_Birth'])})",
+                font=("Arial", 12)
+            ).pack(pady=5)
+
+        # Display assignments per nurse
+        tk.Label(report_window, text="Assignments per Nurse:", font=("Arial", 12, "bold")).pack(pady=10)
+        nurse_tree = ttk.Treeview(report_window, columns=("Nurse", "Count"), show="headings")
+        nurse_tree.heading("Nurse", text="Nurse")
+        nurse_tree.heading("Count", text="Assigned Children")
+        nurse_tree.pack(fill=tk.BOTH, expand=True)
+
+        for nurse, count in assigned_nurses.items():
+            nurse_tree.insert("", "end", values=(nurse, count))
+
+        # Display children per state
+        tk.Label(report_window, text="Children per State:", font=("Arial", 12, "bold")).pack(pady=10)
+        state_tree = ttk.Treeview(report_window, columns=("State", "Count"), show="headings")
+        state_tree.heading("State", text="State")
+        state_tree.heading("Count", text="Children")
+        state_tree.pack(fill=tk.BOTH, expand=True)
+
+        for state, count in children_per_state.items():
+            state_tree.insert("", "end", values=(state, count))
+
+        # Display unassigned children
+        tk.Label(report_window, text="Unassigned Children:", font=("Arial", 12, "bold")).pack(pady=10)
+        unassigned_tree = ttk.Treeview(report_window, columns=("Name", "DOB", "Age"), show="headings")
+        unassigned_tree.heading("Name", text="Child's Name")
+        unassigned_tree.heading("DOB", text="Date of Birth")
+        unassigned_tree.heading("Age", text="Age")
+        unassigned_tree.pack(fill=tk.BOTH, expand=True)
+
+        for _, row in unassigned_children_list.iterrows():
+            child_name = f"{row['Child_First_Name']} {row['Child_Last_Name']}"
+            child_dob = row['Child_Date_of_Birth'].strftime('%Y-%m-%d') if pd.notnull(row['Child_Date_of_Birth']) else "N/A"
+            child_age = calculate_age(row['Child_Date_of_Birth']) if pd.notnull(row['Child_Date_of_Birth']) else "N/A"
+            unassigned_tree.insert("", "end", values=(child_name, child_dob, child_age))
+
+
+        def show_children(event, category):
+            selected_item = event.widget.selection()
+            if not selected_item:
+                return
+            selected_value = event.widget.item(selected_item[0], 'values')[0]
+
+            # Filter children based on the category
+            if category == "nurse":
+                children = self.__combined_data[self.__combined_data['Assigned Nurse'] == selected_value]
+            elif category == "state":
+                children = self.__combined_data[self.__combined_data['State'] == selected_value]
+            elif category == "unassigned":
+                children = self.__combined_data[self.__combined_data['Assigned Nurse'].isna()]
+            else:
+                return
+
+            if children.empty:
+                messagebox.showinfo("Info", f"No children found for {selected_value}.")
+                return
+
+            # Display children in a new window
+            children_window = tk.Toplevel()
+            children_window.title(f"Children ({category.capitalize()}: {selected_value})")
+            children_window.geometry("600x400")
+
+            child_tree = ttk.Treeview(children_window, columns=("Name", "DOB", "Age"), show="headings")
+            child_tree.heading("Name", text="Child's Name")
+            child_tree.heading("DOB", text="Date of Birth")
+            child_tree.heading("Age", text="Age")
+            child_tree.pack(fill=tk.BOTH, expand=True)
+
+            # Populate the tree with children's data
+            for _, row in children.iterrows():
+                child_name = f"{row['Child_First_Name']} {row['Child_Last_Name']}"
+                child_dob = row['Child_Date_of_Birth'].strftime('%Y-%m-%d') if pd.notnull(row['Child_Date_of_Birth']) else "N/A"
+                child_age = calculate_age(row['Child_Date_of_Birth']) if pd.notnull(row['Child_Date_of_Birth']) else "N/A"
+                child_tree.insert("", "end", values=(child_name, child_dob, child_age))
+
+            # Show profile when a child is double-clicked
+            def show_profile(event):
+                selected_child = child_tree.selection()
+                if not selected_child:
+                    return
+                selected_values = child_tree.item(selected_child[0], 'values')
+                child_name = selected_values[0]
+                child_dob = selected_values[1]
+                child_data = self.__combined_data[
+                    (self.__combined_data['Child_First_Name'] + " " + self.__combined_data['Child_Last_Name'] == child_name) &
+                    (self.__combined_data['Child_Date_of_Birth'].dt.strftime('%Y-%m-%d') == child_dob)
+                ]
+                if not child_data.empty:
+                    self.show_child_profile_from_data(child_data.iloc[0])
+
+            child_tree.bind("<Double-1>", show_profile)
+
+            # Update the Treeview display
+            self.update_combined_names()
+
+
+        nurse_tree.bind("<Double-1>", lambda event: show_children(event, "nurse"))
+        state_tree.bind("<Double-1>", lambda event: show_children(event, "state"))
+        unassigned_tree.bind("<Double-1>", lambda event: show_children(event, "unassigned"))
+
+        # Add Export Button
+        def export_report():
+            try:
+                pdf_path = filedialog.asksaveasfilename(
+                    defaultextension=".pdf",
+                    filetypes=[("PDF Files", "*.pdf")],
+                    title="Save Report As"
+                )
+                if not pdf_path:  # User canceled the save dialog
+                    return
+
+                # Create PDF report
+                c = canvas.Canvas(pdf_path, pagesize=letter)
+                c.setFont("Helvetica-Bold", 14)
+                c.drawString(100, 750, "Statistical Report for Combined Data")
+                c.setFont("Helvetica", 12)
+                c.drawString(100, 730, f"Total Children: {total_children}")
+                c.drawString(100, 710, f"Unassigned Children: {unassigned_children_count}")
+                c.drawString(100, 690, f"Average Age: {avg_age:.1f} years" if avg_age else "Average Age: N/A")
+
+                y = 670
+                if youngest_child is not None:
+                    c.drawString(
+                        100, y,
+                        f"Youngest Child: {youngest_child['Child_First_Name']} {youngest_child['Child_Last_Name']} ({calculate_age(youngest_child['Child_Date_of_Birth'])})"
+                    )
+                    y -= 20
+                if oldest_child is not None:
+                    c.drawString(
+                        100, y,
+                        f"Oldest Child: {oldest_child['Child_First_Name']} {oldest_child['Child_Last_Name']} ({calculate_age(oldest_child['Child_Date_of_Birth'])})"
+                    )
+                    y -= 20
+
+                # Assignments per nurse
+                c.setFont("Helvetica-Bold", 12)
+                c.drawString(100, y, "Assignments per Nurse:")
+                y -= 20
+                c.setFont("Helvetica", 10)
+                for nurse, count in assigned_nurses.items():
+                    c.drawString(120, y, f"{nurse}: {count} children")
+                    y -= 20
+                    if y < 50:
+                        c.showPage()
+                        y = 750
+
+                # Children per state
+                c.setFont("Helvetica-Bold", 12)
+                y -= 30
+                c.drawString(100, y, "Children per State:")
+                y -= 20
+                c.setFont("Helvetica", 10)
+                for state, count in children_per_state.items():
+                    c.drawString(120, y, f"{state}: {count} children")
+                    y -= 20
+                    if y < 50:
+                        c.showPage()
+                        y = 750
+
+                # Unassigned children
+                if unassigned_children_count > 0:
+                    c.setFont("Helvetica-Bold", 12)
+                    y -= 30
+                    c.drawString(100, y, "Unassigned Children:")
+                    y -= 20
+                    c.setFont("Helvetica", 10)
+                    for _, row in unassigned_children_list.iterrows():
+                        child_name = f"{row['Child_First_Name']} {row['Child_Last_Name']}"
+                        child_dob = row['Child_Date_of_Birth'].strftime('%Y-%m-%d') if pd.notnull(row['Child_Date_of_Birth']) else "N/A"
+                        child_age = calculate_age(row['Child_Date_of_Birth']) if pd.notnull(row['Child_Date_of_Birth']) else "N/A"
+                        c.drawString(120, y, f"{child_name}, DOB: {child_dob}, Age: {child_age}")
+                        y -= 20
+                        if y < 50:
+                            c.showPage()
+                            y = 750
+
+                c.save()
+                messagebox.showinfo("Success", f"Report saved successfully at {pdf_path}")
+                logging.info(f"Report saved to {pdf_path}")
+            except Exception as e:
+                logging.error(f"Failed to export report: {e}")
+                messagebox.showerror("Error", f"Failed to export report: {e}")
+
+        export_button = tk.Button(report_window, text="Export as PDF", command=export_report)
+        export_button.pack(pady=10)
+
+        logging.info("Statistical report displayed successfully.")
+
+
 
 
     def display_combined_names(self):
@@ -291,6 +575,11 @@ class App:
         # Add "Batch Assign Nurses" button
         batch_assign_button = tk.Button(buttons_frame, text="Batch Assign Nurses", command=self.batch_assign_nurses)
         batch_assign_button.pack(side=tk.LEFT, padx=10)
+
+        # Generates Overall Report
+        generate_report_button = tk.Button(buttons_frame, text="Generate Report", command=self.generate_report)
+        generate_report_button.pack(side=tk.LEFT, padx=10)  
+
 
         unmatched_data_path = 'unmatched_data.xlsx'
         if os.path.exists(unmatched_data_path):
@@ -1110,9 +1399,11 @@ class App:
         except Exception as e:
             messagebox.showerror("Error", f"Error opening Excel file: {e}")
             logging.error(f"Error opening Excel file: {e}")
+    
 
 if __name__ == "__main__":
     root = tk.Tk()
     app = App(root)
+    root.protocol("WM_DELETE_WINDOW", app.on_closing)
     root.mainloop()
 
