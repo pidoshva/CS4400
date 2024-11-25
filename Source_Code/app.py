@@ -897,6 +897,11 @@ class App:
         # Create the Treeview widget with primary columns
         treeview = ttk.Treeview(unmatched_data_window, columns=primary_columns, show="headings")
         treeview.pack(fill=tk.BOTH, expand=True)
+        
+        # Add scrollbar to Treeview
+        tree_scroll = tk.Scrollbar(treeview, command=treeview.yview)
+        tree_scroll.pack(side="right", fill="y")
+        treeview.configure(yscrollcommand=tree_scroll.set)
 
         # Configure the headings and column widths for primary columns
         for col in primary_columns:
