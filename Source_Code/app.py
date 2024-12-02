@@ -31,6 +31,7 @@ class App:
         Postconditions:
             - Application window and buttons are created and displayed.
         """
+       
         if root is not None:
             self.__root = root
             self.__root.title("Excel Combiner")
@@ -47,6 +48,7 @@ class App:
                 messagebox.WARNING("Warning!", "Error generating encryption key.")
 
         self._combined_data = None
+        self.sort_ascending = True
         self.__data_frames = []
 
     def on_closing(self):
@@ -229,7 +231,7 @@ class App:
         # Display logic here for the combined data
         self.display_combined_names()
 
-
+    
     def generate_report(self):
         """
         Generate a statistical report for the combined data and display it in a new window.
@@ -375,6 +377,8 @@ class App:
                 child_dob = row['Child_Date_of_Birth'].strftime('%Y-%m-%d') if pd.notnull(row['Child_Date_of_Birth']) else "N/A"
                 child_age = calculate_age(row['Child_Date_of_Birth']) if pd.notnull(row['Child_Date_of_Birth']) else "N/A"
                 child_tree.insert("", "end", values=(child_name, child_dob, child_age))
+                
+                
 
             # Show profile when a child is double-clicked
             def show_profile(event):
@@ -610,13 +614,16 @@ class App:
             return
 
         # Toggle sort order
+
         self.sort_ascending = not self.sort_ascending
+
         sort_order = "ascending" if self.sort_ascending else "descending"
 
         # Update button text to show current order
         sort_button.config(text=f"Sort by DOB {'▲' if self.sort_ascending else '▼'}")
 
         # Sort data
+
         self.__combined_data.sort_values(by='Child_Date_of_Birth', ascending=self.sort_ascending, inplace=True)
         logging.info(f"Sorted data by Child_Date_of_Birth in {sort_order} order.")
 
@@ -1190,6 +1197,7 @@ class App:
             - Saves the updated data to the Excel file.
         """
         if self.__combined_data is None or self.__combined_data.empty:
+            print("No data available for batch assignment.")
             messagebox.showerror("Error", "No data available for batch assignment.")
             logging.error("No data available for batch assignment.")
             return
