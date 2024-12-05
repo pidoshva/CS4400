@@ -14,6 +14,11 @@ class Command:
     def execute(self):
         """
         Abstract method that contains the logic of the sub-commands.
+
+        Preconditions:
+            - Subclasses must override this method.
+        Postconditions:
+            - Executes the logic defined in the subclass implementation.
         """
         raise NotImplementedError("Subclasses must implement the 'execute' method")
 
@@ -26,16 +31,30 @@ class ReadExcelCommand(Command):
         app: The application object that holds the application state.
     """
     def __init__(self, app):
+        """
+        Initialize the command with the application state.
+
+        Preconditions:
+            - `app` is a valid application object.
+        Postconditions:
+            - The command is initialized with a reference to the application object.
+        """
         self.app = app
 
     def execute(self, filepath):
         """
-        Execute the file selection and read the Excel data into a pandas DataFrame.
-        
+        Execute the command to read the selected Excel file into a pandas DataFrame.
+
+        Preconditions:
+            - `filepath` is a valid string representing the file path to an Excel file.
+        Postconditions:
+            - Returns a pandas DataFrame containing the file's data or None if reading fails.
+
+        Args:
+            filepath (str): The path to the Excel file to read.
         Returns:
-            DataFrame: A pandas DataFrame representing the content of the Excel file.
+            DataFrame: A pandas DataFrame containing the file's data.
         """
-        
         if not filepath:
             logging.error("No file selected.")
             messagebox.showerror("Error", "No file selected.")
@@ -55,23 +74,34 @@ class ReadExcelCommand(Command):
 
 class CombineDataCommand(Command):
     """
-    Command to combine two data sets (Excel files) by Mother's Name and Child's Date of Birth.
-    
-    Args:
-        app: The application object.
-        data_frames (list): List of data frames from the two Excel files.
+    Command to combine two datasets (Excel files) based on Mother's Name and Child's Date of Birth.
     """
     def __init__(self, app, data_frames):
+        """
+        Initialize the command with the application state and data frames to combine.
+
+        Preconditions:
+            - `app` is a valid application object.
+            - `data_frames` is a list of pandas DataFrames containing the data to combine.
+        Postconditions:
+            - The command is initialized with the application state and data frames.
+        """
         self.app = app
         self.data_frames = data_frames
 
     def execute(self):
         """
-        Execute the combination of two data frames based on Mother's Name and Child's Date of Birth.
-        The result is saved to an Excel file and returned for UI display.
+        Execute the combination of two DataFrames based on specified columns.
+
+        Preconditions:
+            - The data frames provided contain the required columns for merging.
+        Postconditions:
+            - Combined matched data is saved to an Excel file.
+            - Unmatched data, if any, is saved to a separate Excel file.
+            - Returns the combined data as a pandas DataFrame.
 
         Returns:
-            DataFrame: A pandas DataFrame containing the combined data.
+            DataFrame: A pandas DataFrame containing the combined matched data.
         """
         try:
             # Extract the two data frames
@@ -158,24 +188,89 @@ class CombineDataCommand(Command):
 
 
 class GenerateKeyCommand(Command):
+    """
+    Command to generate a new encryption key.
+    """
     def __init__(self, app):
+        """
+        Initialize the command with the application state.
+
+        Preconditions:
+            - `app` is a valid application object.
+        Postconditions:
+            - The command is initialized with the application state.
+        """
         self.app = app
     
     def execute(self):
-            Crypto.generateKey()
+        """
+        Generate a new encryption key.
+
+        Preconditions:
+            - The key file does not already exist.
+        Postconditions:
+            - A new encryption key is saved to the file system.
+        """    
+        Crypto.generateKey()
     
 class DeleteFileCommand(Command):
+    """
+    Command to delete a specified file.
+    """
     def __init__(self, app):
+        """
+        Initialize the command with the application state.
+
+        Preconditions:
+            - `app` is a valid application object.
+        Postconditions:
+            - The command is initialized with the application state.
+        """
         self.app = app
 
     def execute(self, path):
+        """
+        Delete the specified file.
+
+        Preconditions:
+            - `path` is a valid file path.
+        Postconditions:
+            - The specified file is deleted from the file system.
+
+        Args:
+            path (str): The path of the file to delete.
+        """
         os.remove(path)
 
 class EncryptFileCommand(Command):
+    """
+    Command to encrypt a file.
+    """
     def __init__(self, app):
+        """
+        Initialize the command with the application state.
+
+        Preconditions:
+            - `app` is a valid application object.
+        Postconditions:
+            - The command is initialized with the application state.
+        """
         self.app = app
     
     def execute(self, filepath = None):
+        """
+        Encrypt the specified file or prompt the user to select a file for encryption.
+
+        Preconditions:
+            - A valid encryption key exists.
+        Postconditions:
+            - The file is encrypted successfully.
+
+        Args:
+            filepath (str, optional): The path of the file to encrypt. Defaults to None.
+        Returns:
+            bool: True if encryption is successful, False otherwise.
+        """
         try:
             logging.info("Attempting to encrypt files.")
             if filepath == None:
@@ -194,10 +289,34 @@ class EncryptFileCommand(Command):
             return False
 
 class DecryptFileCommand(Command):
+    """
+    Command to decrypt a file.
+    """
     def __init__(self, app):
+        """
+        Initialize the command with the application state.
+
+        Preconditions:
+            - `app` is a valid application object.
+        Postconditions:
+            - The command is initialized with the application state.
+        """
         self.app = app
     
     def execute(self, filepath):
+        """
+        Decrypt the specified file.
+
+        Preconditions:
+            - A valid encryption key exists.
+        Postconditions:
+            - The file is decrypted successfully.
+
+        Args:
+            filepath (str): The path of the file to decrypt.
+        Returns:
+            bool: True if decryption is successful, False otherwise.
+        """
         try:
             key = Crypto.loadKey()
             Crypto.decrypt_file(filepath, key)
@@ -208,25 +327,45 @@ class DecryptFileCommand(Command):
 
 class Invoker:
     """
-    Invoker class to store and execute commands.
-    The Invoker contains the history of all commands issued. It is responsible for executing these commands sequentially.
+    Invoker class to store and execute commands sequentially.
+
+    Attributes:
+        commands (list): A list of commands to execute.
     """
     def __init__(self):
+        """
+        Initialize the invoker with an empty command list.
+
+        Preconditions:
+            - No arguments are required.
+        Postconditions:
+            - An empty list of commands is initialized.
+        """
         self.commands = []
 
     def add_command(self, command):
         """
-        Add a command to the invoker.
+        Add a command to the Invoker.
+
+        Preconditions:
+            - `command` is a valid Command object.
+        Postconditions:
+            - The command is added to the list of commands.
 
         Args:
-            command (Command): The command to be added.
+            command (Command): The command to add to the list.
         """
         self.commands.append(command)
         logging.info(f"Command added: {command.__class__.__name__}")
 
     def execute_commands(self):
         """
-        Execute all commands in sequence.
+        Execute all commands in the order they were added.
+
+        Preconditions:
+            - The command list contains at least one command.
+        Postconditions:
+            - Each command in the list is executed sequentially.
         """
         for command in self.commands:
             command.execute()

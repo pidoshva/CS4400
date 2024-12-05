@@ -50,6 +50,14 @@ class App:
         self.__data_frames = []
 
     def on_closing(self):
+        """
+        Handles application closing. Encrypts combined data file before exiting.
+
+        Preconditions:
+            - Combined data exists and needs to be encrypted.
+        Postconditions:
+            - The combined data is encrypted, and the application exits.
+        """
         logging.info("Closing App")
         filepath = 'combined_matched_data.xlsx'
         #encrypt combined data files
@@ -257,6 +265,14 @@ class App:
         self.__combined_data['Child_Date_of_Birth'] = pd.to_datetime(self.__combined_data['Child_Date_of_Birth'], errors='coerce')
 
         def calculate_age(dob):
+            """
+            Calculate age in years, months, or days based on the date of birth.
+
+            Preconditions:
+                - `dob` is a valid datetime object or NaT.
+            Postconditions:
+                - Returns a string representation of the age (e.g., "2 years, 3 months").
+            """
             if pd.isnull(dob):
                 return "Unknown"
             delta = today - dob
@@ -339,6 +355,18 @@ class App:
 
 
         def show_children(event, category):
+            """
+            Display a list of children filtered by the specified category in a new window.
+
+            Preconditions:
+                - `event` is a valid Tkinter event object triggered by a user action.
+                - `category` is a string that specifies the type of filtering: "nurse", "state", or "unassigned".
+                - `self.__combined_data` is a valid DataFrame containing child data.
+            Postconditions:
+                - A new window is opened displaying the filtered list of children.
+                - If no children match the criteria, an information message is shown.
+                - Allows double-clicking a child's entry to view their detailed profile.
+            """
             selected_item = event.widget.selection()
             if not selected_item:
                 return
@@ -378,6 +406,15 @@ class App:
 
             # Show profile when a child is double-clicked
             def show_profile(event):
+                """
+                Display the detailed profile of a child when their entry is double-clicked.
+
+                Preconditions:
+                    - `event` is a valid Tkinter event object triggered by a double-click.
+                    - The selected child's data exists in `self.__combined_data`.
+                Postconditions:
+                    - Opens a detailed profile window for the selected child.
+                """
                 selected_child = child_tree.selection()
                 if not selected_child:
                     return
@@ -396,13 +433,20 @@ class App:
             # Update the Treeview display
             self.update_combined_names()
 
-
         nurse_tree.bind("<Double-1>", lambda event: show_children(event, "nurse"))
         state_tree.bind("<Double-1>", lambda event: show_children(event, "state"))
         unassigned_tree.bind("<Double-1>", lambda event: show_children(event, "unassigned"))
 
         # Add Export Button
         def export_report():
+            """
+            Export the statistical report to a PDF file.
+
+            Preconditions:
+                - Valid combined data is available.
+            Postconditions:
+                - A PDF report is saved at the specified location.
+            """
             try:
                 pdf_path = filedialog.asksaveasfilename(
                     defaultextension=".pdf",
@@ -489,9 +533,6 @@ class App:
 
         logging.info("Statistical report displayed successfully.")
 
-
-
-
     def display_combined_names(self):
         """
         Display combined data in a new Toplevel window with options for searching,
@@ -506,6 +547,14 @@ class App:
         combined_names_window.title("Combined Data")
 
         def on_closing():
+            """
+            Handle the closing event for the combined data window.
+
+            Preconditions:
+                - User confirms the action through a messagebox.
+            Postconditions:
+                - The window is destroyed, and logging information is recorded.
+            """
             if tk.messagebox.askokcancel("Quit", "Do you want to exit this view?\nFiles must be uploaded to view the data again."):
                 combined_names_window.destroy()
                 logging.info("Combined data window closed.")
@@ -768,6 +817,17 @@ class App:
 
         # Function to display children assigned to the selected nurse
         def show_children_for_nurse(nurse_name):
+            """
+            Display a list of children assigned to a specific nurse in a new window.
+
+            Preconditions:
+                - `nurse_name` is a valid string representing the nurse's name.
+                - `self._combined_data` contains a DataFrame with child and nurse assignment data.
+            Postconditions:
+                - A new window is opened, showing a list of children assigned to the specified nurse.
+                - Each child in the list is displayed with their name and date of birth in a Treeview widget.
+                - Double-clicking on a child opens their detailed profile.
+            """
             assigned_children = self._combined_data[self._combined_data['Assigned Nurse'] == nurse_name]
             children_window = tk.Toplevel(stats_window)
             children_window.title(f"Children assigned to {nurse_name}")
@@ -788,6 +848,14 @@ class App:
 
              # Bind double-click to show profile
             def on_child_double_click(event):
+                """
+                Handle double-click events on the Treeview rows to show the selected child's profile.
+
+                Preconditions:
+                    - A child is selected from the Treeview.
+                Postconditions:
+                    - Opens a detailed profile for the selected child in a new window.
+                """
                 selected_item = tree.selection()
                 if selected_item:
                     item_data = tree.item(selected_item)["values"]
